@@ -1,0 +1,6 @@
+{
+  "name": "Avantty Executive Operations & Talent Platform",
+  "description": "Executive recruitment dashboard with real-time meeting tracking, AI candidate sourcing, security audit logs, and context-aware AI Assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
