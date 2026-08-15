@@ -197,16 +197,54 @@ export const DEFAULT_WHITE_LABEL: WhiteLabelConfig = {
   isClientView: false
 };
 
+export function slugifyCompanyName(name: string): string {
+  if (!name) return "client";
+  return name
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+export function unslugifyCompanyName(slug: string): string {
+  if (!slug) return "Client Partner";
+  return slug
+    .split(/[-_]+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
   if (typeof window === "undefined") return null;
+  const hostname = window.location.hostname.toLowerCase();
   const search = window.location.search;
   const hash = window.location.hash;
+  const pathname = window.location.pathname;
   const params = new URLSearchParams(search || (hash.startsWith("#?") ? hash.slice(1) : ""));
   
-  const company = params.get("company") || params.get("c");
+  let company = params.get("company") || params.get("c");
+  
+  // 1. Detect subdomain format: demodashboard-empresa.avanttyops.com
+  if (!company && hostname.includes("demodashboard-")) {
+    const subPart = hostname.split(".")[0];
+    const extracted = subPart.replace("demodashboard-", "").trim();
+    if (extracted) {
+      company = unslugifyCompanyName(extracted);
+    }
+  }
+  
+  // 2. Detect clean pathname format: /artificially or /p/artificially
+  if (!company && pathname && pathname !== "/" && !pathname.includes(".")) {
+    const cleanPath = pathname.replace(/^\/(p\/)?/, "").replace(/\/$/, "").trim();
+    if (cleanPath && !["dashboard", "candidates", "meetings", "logs", "login", "admin", "index"].includes(cleanPath)) {
+      company = unslugifyCompanyName(cleanPath);
+    }
+  }
+
   if (!company) return null;
   
-  const isClient = params.get("client") === "true" || params.get("view") === "client" || params.get("v") === "c" || params.get("cl") === "1";
+  const isClient = params.get("client") === "true" || params.get("view") === "client" || params.get("v") === "c" || params.get("cl") === "1" || hostname.includes("demodashboard-");
   
   const config: WhiteLabelConfig = {
     companyName: company,
@@ -222,10 +260,12 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
   };
 
   // Automatically clean and scrub the browser address bar immediately
-  // So the user and client ONLY see: https://demodashboard.avanttyops.com/
+  // So the user and client ONLY see: https://demodashboard.avanttyops.com/ or the clean subdomain
   try {
-    const cleanUrl = window.location.pathname || "/";
-    window.history.replaceState({}, document.title, cleanUrl);
+    if (window.location.search) {
+      const cleanUrl = window.location.pathname || "/";
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
   } catch (e) {
     // Ignore in non-browser environments
   }
@@ -233,10 +273,21 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
   return config;
 }
 
-export function generateWhiteLabelUrl(config: WhiteLabelConfig, customBaseUrl?: string): string {
+export function generateWhiteLabelUrl(
+  config: WhiteLabelConfig, 
+  customBaseUrl?: string,
+  mode: "subdomain" | "query" = "subdomain"
+): string {
   if (typeof window === "undefined") return "";
+  
+  const companySlug = slugifyCompanyName(config.companyName || "client");
+  
+  if (mode === "subdomain") {
+    // Generates: https://demodashboard-empresa.avanttyops.com
+    return `https://demodashboard-${companySlug}.avanttyops.com`;
+  }
+  
   let base = customBaseUrl?.trim() || `${window.location.origin}${window.location.pathname}`;
-  // Remove trailing slash for clean formatting
   if (base.endsWith("/")) base = base.slice(0, -1);
   if (!base.startsWith("http://") && !base.startsWith("https://")) {
     base = `https://${base}`;

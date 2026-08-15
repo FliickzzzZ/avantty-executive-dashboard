@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useAppData, WhiteLabelConfig, DEFAULT_WHITE_LABEL, generateWhiteLabelUrl } from "@/src/app-data-context";
+import { useAppData, WhiteLabelConfig, DEFAULT_WHITE_LABEL, generateWhiteLabelUrl, slugifyCompanyName } from "@/src/app-data-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -127,11 +127,12 @@ export function ClientPitchDemoModal() {
   const [formData, setFormData] = useState<WhiteLabelConfig>(whiteLabelConfig);
   const [copied, setCopied] = useState(false);
   const [appliedNotification, setAppliedNotification] = useState(false);
+  const [linkMode, setLinkMode] = useState<"subdomain" | "query">("subdomain");
   const [customDomain, setCustomDomain] = useState<string>(() => {
     if (typeof window !== "undefined" && window.location.origin !== "null") {
       return window.location.origin;
     }
-    return "https://demodashboard.avanttyops.app";
+    return "https://demodashboard.avanttyops.com";
   });
 
   useLockBodyScroll(isDemoModalOpen);
@@ -149,7 +150,7 @@ export function ClientPitchDemoModal() {
 
   if (!isDemoModalOpen) return null;
 
-  const generatedUrl = generateWhiteLabelUrl(formData, customDomain);
+  const generatedUrl = generateWhiteLabelUrl(formData, customDomain, linkMode);
 
   const handleApplyPreset = (preset: PresetItem) => {
     setFormData((prev) => ({
@@ -326,32 +327,50 @@ export function ClientPitchDemoModal() {
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                   <Globe className="h-3.5 w-3.5 text-emerald-500" />
-                  Dominio Base del Enlace (Personalizable)
+                  Formato de Enlace para el Cliente
                 </label>
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-                  Enlace Limpio & Corto
+                  Personalizado al 100%
                 </span>
               </div>
 
-              {/* Editable Base Domain */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div className="sm:col-span-2">
-                  <Input
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="https://demodashboard.avanttyops.app o tu dominio"
-                    className="font-mono text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 h-8"
-                  />
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setCustomDomain(window.location.origin)}
-                    className="w-full text-[11px] font-bold py-1.5 px-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-                  >
-                    Usar Dominio Actual
-                  </button>
-                </div>
+              {/* Format Toggle: Subdomain VIP vs Clean Parameter */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLinkMode("subdomain")}
+                  className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                    linkMode === "subdomain"
+                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white ring-1 ring-emerald-500/20"
+                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                  }`}
+                >
+                  <p className="text-xs font-bold flex items-center justify-between">
+                    <span>Subdominio VIP</span>
+                    {linkMode === "subdomain" && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
+                    demodashboard-{slugifyCompanyName(formData.companyName)}.avanttyops.com
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setLinkMode("query")}
+                  className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                    linkMode === "query"
+                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white ring-1 ring-emerald-500/20"
+                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                  }`}
+                >
+                  <p className="text-xs font-bold flex items-center justify-between">
+                    <span>Enlace Auto-Limpiable</span>
+                    {linkMode === "query" && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
+                    demodashboard.avanttyops.com (Scrubbing)
+                  </p>
+                </button>
               </div>
 
               {/* Clean Output URL with Copy Button */}
