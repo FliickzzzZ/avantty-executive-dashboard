@@ -135,9 +135,10 @@ export function AIAssistantChatbot({ currentRole, onRoleChange, onSelectPage }: 
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const ceoName = whiteLabelConfig?.contactName || "Naim Ramos";
-  const companyName = whiteLabelConfig?.companyName || "Avantty";
-  const ceoEmail = whiteLabelConfig?.contactEmail || "naim@avantty.com";
+  const ceoFullName = whiteLabelConfig?.contactName || "Naim Ramos";
+  const companyName = (whiteLabelConfig?.isCustomized && whiteLabelConfig?.companyName) ? whiteLabelConfig.companyName : "Avantty";
+  const ceoFirstName = ceoFullName.trim().split(/\s+/)[0] || "Naim";
+  const ceoEmail = (whiteLabelConfig as any)?.contactEmail || `${ceoFirstName.toLowerCase()}@${companyName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`;
 
   // Draggable position state
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -215,20 +216,37 @@ export function AIAssistantChatbot({ currentRole, onRoleChange, onSelectPage }: 
     {
       id: "msg-welcome",
       sender: "bot",
-      text: `👋 **Hello! I am your AI Operations & Executive Intelligence Assistant for ${companyName}.**
+      text: `👋 ¡Hola **${ceoFirstName}**! Soy tu asistente de operaciones para **${companyName}**.
 
-I am built directly into this executive search platform to support your team. Here is what I can do for you:
-
-• **Platform Q&A & Support**: Ask me any question about how this dashboard works, metrics, or candidate tracking.
-• **Company Leadership & Team**: I know our company leadership (**CEO: ${ceoName}**), partner capacities, and team roles.
-• **Executive Algorithms**: Ask me how the **Weighted Pipeline Value**, **Partner Capacity Load**, or **Urgency Index** are calculated.
-• **Live Sourcing & Candidates**: Query active C-Suite specs, Board scores, hunting grounds, or boolean strings.
-• **Interview Agendas & Bots**: Check upcoming interviews, launch meeting recording bots, and manage automated follow-ups.
-
-💬 *Ask me any question or try one of the quick suggestions below!*`,
+Voy directo al grano. Puedes preguntarme al instante:
+• **Métricas & Algoritmos**: Pipeline Ponderado, Carga de Socios o Índice de Urgencia.
+• **Candidatos & Mandatos**: Prioridades urgentes, Board Scores o Boolean strings.
+• **Reuniones**: Agenda de hoy o de cualquier día de la semana.`,
       timestamp: new Date()
     }
   ]);
+
+  // Update initial message if whiteLabelConfig changes
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === "msg-welcome") {
+        return [
+          {
+            id: "msg-welcome",
+            sender: "bot",
+            text: `👋 ¡Hola **${ceoFirstName}**! Soy tu asistente de operaciones para **${companyName}**.
+
+Voy directo al grano. Puedes preguntarme al instante:
+• **Métricas & Algoritmos**: Pipeline Ponderado, Carga de Socios o Índice de Urgencia.
+• **Candidatos & Mandatos**: Prioridades urgentes, Board Scores o Boolean strings.
+• **Reuniones**: Agenda de hoy o de cualquier día de la semana.`,
+            timestamp: new Date()
+          }
+        ];
+      }
+      return prev;
+    });
+  }, [ceoFirstName, companyName]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -253,7 +271,7 @@ I am built directly into this executive search platform to support your team. He
     return null;
   };
 
-  // Smart, conversational common-sense bot response generator
+  // Smart, direct, executive bot response generator
   const generateBotResponse = (userQuery: string): {
     responseText: string;
     actionPayload?: ChatMessage["actionPayload"];
@@ -282,11 +300,11 @@ I am built directly into this executive search platform to support your team. He
     if (isCEOQuery) {
       if (isSpanish) {
         return {
-          responseText: `El **Chief Executive Officer (CEO)** de **${companyName}** es **${ceoName}** (${ceoEmail}).\n\nComo CEO, ${ceoName} lidera las operaciones de Executive Search, la supervisión de mandatos de nivel C-Suite y VP, la carga de capacidad entre socios y la gobernanza estratégica de la firma.`
+          responseText: `Hola **${ceoFirstName}**, el **CEO de ${companyName}** eres tú (**${ceoFullName}**, ${ceoEmail}). Lideras los mandatos C-Suite, la capacidad de socios y la estrategia global de la firma.`
         };
       } else {
         return {
-          responseText: `The **Chief Executive Officer (CEO)** of **${companyName}** is **${ceoName}** (${ceoEmail}).\n\nAs CEO, ${ceoName} oversees executive search mandate allocations, C-Suite & Board client relationships, partner capacity bandwidth, and enterprise firm governance.`
+          responseText: `Hello **${ceoFirstName}**, the **CEO of ${companyName}** is **${ceoFullName}** (${ceoEmail}). Leading all executive search practice operations, partner allocations, and firm governance.`
         };
       }
     }
@@ -303,15 +321,15 @@ I am built directly into this executive search platform to support your team. He
     ) {
       if (isSpanish) {
         return {
-          responseText: `**Algoritmo de Valor de Pipeline Ponderado (Weighted Pipeline):**\n\n$$\\text{Pipeline} = (\\text{Salario Target} \\times \\text{Fee 30\\%}) \\times \\text{Probabilidad de Cierre}$$\n\n• **Fase 1: Mandato Abierto (Sourcing / Longlist)**: Probabilidad = **20%**\n• **Fase 2: Shortlist Presentada al Cliente**: Probabilidad = **50%**\n• **Fase 3: Entrevistas Finales con el Consejo (Board Round)**: Probabilidad = **80%**\n• **Fase 4: Oferta Aceptada / Placed**: **100% Facturación Cobrada** (Pasa de Pipeline a Placed Revenue y libera el Active Retainer).\n\n*Cada vez que mueves la fase de un candidato en Search Candidates, el valor superior del Dashboard se recalcula al instante.*`,
+          responseText: `**Cálculo del Pipeline Ponderado en ${companyName}:**\n\n$$\\text{Pipeline} = (\\text{Salario Target} \\times 30\\% \\text{ Fee}) \\times \\text{Probabilidad}$$\n\n• **Longlist (Sourcing)**: **20%**\n• **Shortlist al Cliente**: **50%**\n• **Entrevistas de Consejo (Board)**: **80%**\n• **Closed / Placed**: **100% Facturado** (Pasa a cobrado y libera el retainer activo).`,
           navigationTarget: {
             page: "search-candidates",
-            label: "View Pipeline in Search Candidates"
+            label: "Ver Pipeline en Search Candidates"
           }
         };
       } else {
         return {
-          responseText: `**Weighted Pipeline Value Algorithm:**\n\n$$\\text{Pipeline Value} = (\\text{Target Salary} \\times \\text{Fee 30\\%}) \\times \\text{Stage Probability}$$\n\n• **Phase 1: Open Mandate (Sourcing / Longlist)**: Probability = **20%**\n• **Phase 2: Shortlist Presented to Client**: Probability = **50%**\n• **Phase 3: Final Board Round (Board Interviews)**: Probability = **80%**\n• **Phase 4: Offer Accepted / Placed**: **100% Placed Revenue** (Moves from Pipeline to Collected Fees and automatically releases partner retainer capacity).\n\n*Selecting any candidate phase immediately recalculates your live top dashboard metrics.*`,
+          responseText: `**${companyName} Weighted Pipeline Calculation:**\n\n$$\\text{Pipeline Value} = (\\text{Target Salary} \\times 30\\% \\text{ Fee}) \\times \\text{Stage Probability}$$\n\n• **Open Mandate (Sourcing)**: **20%**\n• **Shortlist Presented**: **50%**\n• **Board Interviews**: **80%**\n• **Offer Closed / Placed**: **100% Placed Revenue** (Transfers to collected billings and releases partner retainer).`,
           navigationTarget: {
             page: "search-candidates",
             label: "View Pipeline in Search Candidates"
@@ -331,15 +349,15 @@ I am built directly into this executive search platform to support your team. He
     ) {
       if (isSpanish) {
         return {
-          responseText: `**Algoritmo de Carga de Capacidad de Socios (Capacity Load):**\n\n$$\\text{Carga \\%} = \\left(\\frac{\\text{Mandatos Activos}}{\\text{Socios} \\times 3.5}\\right) \\times 100$$\n\n• En Executive Search de alto nivel, un socio puede gestionar con máxima excelencia hasta **3.5 mandatos activos**.\n• Con 2 socios, la capacidad óptima es de **7 mandatos** (100%).\n• Si la carga supera el **85%**, el sistema activa una alerta preventiva de *"High Workload Friction"* para evitar retrasos en las entregas a clientes.`,
+          responseText: `**Carga de Capacidad de Socios en ${companyName}:**\n\n$$\\text{Carga \\%} = \\left(\\frac{\\text{Mandatos Activos}}{\\text{Socios} \\times 3.5}\\right) \\times 100$$\n\n• **Límite óptimo**: **3.5 mandatos por socio** (máximo 7 mandatos para 2 socios).\n• **Alerta de fricción**: Se activa al superar el **85%** de carga para evitar retrasos con clientes.`,
           navigationTarget: {
             page: "dashboard",
-            label: "View Capacity Load on Dashboard"
+            label: "Ver Capacidad en Dashboard"
           }
         };
       } else {
         return {
-          responseText: `**Active Retainer Capacity Load Algorithm:**\n\n$$\\text{Capacity Load \\%} = \\left(\\frac{\\text{Active Retainers}}{\\text{Partners} \\times 3.5}\\right) \\times 100$$\n\n• In retained executive headhunting, a senior partner can manage up to **3.5 active mandates** simultaneously with elite tier delivery.\n• For 2 partners, the standard maximum bandwidth is **7 active mandates** (100%).\n• When capacity exceeds **85%**, the dashboard triggers a *"High Workload Friction — Delay Risk"* alert to protect client SLAs.`,
+          responseText: `**${companyName} Partner Capacity Load:**\n\n$$\\text{Capacity Load \\%} = \\left(\\frac{\\text{Active Retainers}}{\\text{Partners} \\times 3.5}\\right) \\times 100$$\n\n• **Benchmark**: **3.5 active mandates per partner** (7 mandates max for 2 partners).\n• **Delay Friction Warning**: Triggers when capacity exceeds **85%**.`,
           navigationTarget: {
             page: "dashboard",
             label: "View Capacity Load on Dashboard"
@@ -359,15 +377,15 @@ I am built directly into this executive search platform to support your team. He
     ) {
       if (isSpanish) {
         return {
-          responseText: `**Algoritmo de Índice de Riesgo y Urgencia (Urgency Index):**\n\n$$\\text{Urgency Score} = (\\text{Días Abierto} \\times 1.2) - (\\text{Candidatos Cualificados} \\times 15)$$\n\n• **Score $\\ge 18$**: **Delay Risk** (Rojo — requiere atención urgente).\n• **Score $5 - 17$**: **Attention Required** (Ámbar).\n• **Score $< 5$**: **Low Risk / On Track** (Verde — proceso dentro de los plazos ideales).\n\nPuedes ajustar los candidatos cualificados directamente en las tarjetas de perfil con los botones \`+\` y \`-\`.`,
+          responseText: `**Índice de Urgencia de Mandatos:**\n\n$$\\text{Urgency Score} = (\\text{Días Abierto} \\times 1.2) - (\\text{Qual. Candidates} \\times 15)$$\n\n• $\\ge 18$: 🔴 **Delay Risk** (Requiere acelerar sourcing)\n• $5 - 17$: 🟡 **Attention Required**\n• $< 5$: 🟢 **Low Risk / On Track**`,
           navigationTarget: {
             page: "search-candidates",
-            label: "Inspect Urgency Scores"
+            label: "Inspeccionar Urgencias"
           }
         };
       } else {
         return {
-          responseText: `**Search Mandate Urgency Index Algorithm:**\n\n$$\\text{Urgency Score} = (\\text{Days Open} \\times 1.2) - (\\text{Qualified Candidates} \\times 15)$$\n\n• **Score $\\ge 18$**: **Delay Risk** (High friction mandate requiring immediate sourcing acceleration).\n• **Score $5 - 17$**: **Attention Required** (Moderate priority).\n• **Score $< 5$**: **Low Risk / On Track** (Healthy pipeline progression).\n\nYou can adjust qualified candidate tallies directly on each profile card using the \`+\` and \`-\` controls.`,
+          responseText: `**Mandate Urgency Index Formula:**\n\n$$\\text{Urgency Score} = (\\text{Days Open} \\times 1.2) - (\\text{Qualified Candidates} \\times 15)$$\n\n• $\\ge 18$: 🔴 **Delay Risk** (Requires immediate sourcing push)\n• $5 - 17$: 🟡 **Attention Required**\n• $< 5$: 🟢 **Low Risk / On Track**`,
           navigationTarget: {
             page: "search-candidates",
             label: "Inspect Urgency Scores"
@@ -394,11 +412,11 @@ I am built directly into this executive search platform to support your team. He
     if (isHelpOrCapabilitiesQuery) {
       if (isSpanish) {
         return {
-          responseText: `Soy el **Asistente de IA para Operaciones de Executive Search** de **${companyName}**.\n\n**Mis principales capacidades para todo el equipo:**\n1. **Resolver dudas de la plataforma**: Explico cómo funciona cualquier sección del dashboard, permisos o configuraciones.\n2. **Conocimiento de Liderazgo**: Conozco a nuestro **CEO (${ceoName})**, los socios asignados y la capacidad disponible.\n3. **Cálculo de Algoritmos**: Te explico y audito el **Weighted Pipeline Value**, **Partner Capacity Load** y el **Urgency Index**.\n4. **Consultas de Candidatos**: Busca candidatos por rol, empresa cliente, Board Readiness Score, hunting grounds y cadenas Booleanas.\n5. **Gestión de Entrevistas**: Revisa la agenda semanal, consulta resúmenes de reuniones y gestiona correos de seguimiento automáticos.`
+          responseText: `Hola **${ceoFirstName}**, asisto a **${companyName}** en 4 áreas directas:\n\n1. **Métricas**: Auditoría y fórmulas de Pipeline, Carga de Socios y Riesgo.\n2. **Candidatos**: Consultas de perfiles C-Suite, Board Scores y Hunting Grounds.\n3. **Agenda**: Entrevistas semanales, grabación de sesiones y resúmenes.\n4. **Automatización**: Envío de correos de seguimiento y registro en auditoría.`
         };
       } else {
         return {
-          responseText: `I am the **Executive Search AI Operations Assistant** for **${companyName}**.\n\n**My core capabilities for your entire organization:**\n1. **Platform Guidance & Q&A**: I can answer any question about dashboard modules, white-label settings, and role switching.\n2. **Company Leadership**: I have direct context on our **CEO (${ceoName})**, active partner headcount, and firm governance.\n3. **Algorithm Intelligence**: I calculate and explain **Weighted Pipeline Value**, **Capacity Load**, and **Urgency Indices**.\n4. **Executive Candidate Sourcing**: Search C-Suite profiles, board readiness scores, talent hunting grounds, and boolean query strings.\n5. **Schedule & Follow-Up Automation**: Check weekly interview sessions, meeting bot transcripts, and automated candidate debriefs.`
+          responseText: `Hello **${ceoFirstName}**, I support **${companyName}** across 4 key areas:\n\n1. **Metrics**: Weighted Pipeline, Partner Capacity, and Urgency audits.\n2. **Candidates**: C-Suite talent specs, Board Scores, and Poaching lists.\n3. **Schedule**: Weekly interviews, bot recording sessions, and transcripts.\n4. **Automation**: Follow-up emails and real-time audit ledger logging.`
         };
       }
     }
@@ -443,27 +461,27 @@ I am built directly into this executive search platform to support your team. He
 
         if (isSpanish) {
           return {
-            responseText: `¡Listo! He marcado la reunión con **${targetMeeting.candidate}** (${targetMeeting.role} en **${targetMeeting.clientCompany}**) como **Meeting Ended** y la he archivado en el Ledger de auditoría.\n\nPuedes navegar a la sección de Reuniones para ver el calendario actualizado.`,
+            responseText: `Reunión con **${targetMeeting.candidate}** (${targetMeeting.role} en **${targetMeeting.clientCompany}**) marcada como **Meeting Ended** y archivada en auditoría.`,
             navigationTarget: {
               page: "meetings",
-              label: "Go to Meetings Schedule"
+              label: "Ver Agenda de Reuniones"
             },
             actionPayload: {
               type: "restore_meeting",
-              label: `Revert Meeting: ${targetMeeting.candidate}`,
+              label: `Revertir: ${targetMeeting.candidate}`,
               targetId: targetMeeting.id
             }
           };
         } else {
           return {
-            responseText: `Done! I have marked the meeting with **${targetMeeting.candidate}** (${targetMeeting.role} at **${targetMeeting.clientCompany}**) as **Meeting Ended** and archived it to your audit ledger.\n\nYou can navigate directly to the Meetings section to view your updated schedule.`,
+            responseText: `Meeting with **${targetMeeting.candidate}** (${targetMeeting.role} at **${targetMeeting.clientCompany}**) marked as **Meeting Ended** and archived.`,
             navigationTarget: {
               page: "meetings",
-              label: "Go to Meetings Schedule"
+              label: "View Meetings Schedule"
             },
             actionPayload: {
               type: "restore_meeting",
-              label: `Revert Meeting: ${targetMeeting.candidate}`,
+              label: `Revert: ${targetMeeting.candidate}`,
               targetId: targetMeeting.id
             }
           };
@@ -471,7 +489,7 @@ I am built directly into this executive search platform to support your team. He
       }
     }
 
-    // 1. Check if user asks "what candidates do I have this week?" or "candidates for this week"
+    // 6. Check if user asks "what candidates do I have this week?" or "candidates for this week"
     const isWeekCandidateQuery =
       (qLower.includes("candidat") || qLower.includes("perfil")) &&
       (qLower.includes("week") || qLower.includes("semana") || qLower.includes("this week") || qLower.includes("esta semana") || qLower.includes("tengo") || qLower.includes("have"));
@@ -489,10 +507,10 @@ I am built directly into this executive search platform to support your team. He
           .join("\n");
 
         return {
-          responseText: `Esta semana tienes **${allScheduledMeetings.length} entrevistas** programadas:\n\n${meetingsList}\n\nEn cuanto a perfiles de búsqueda de candidatos, tu prioridad máxima es el **${topPrioritySpec ? `${topPrioritySpec.roleTitle} para ${topPrioritySpec.company}` : "CEO para Veloce Health & Bio"}** (urgencia 10/10), seguido de: ${otherSpecs.map(s => `**${s.roleTitle}** (${s.company})`).join(", ")}.\n\nIf you would like, you can navigate directly to the Search Candidates section to view all candidate specifications.`,
+          responseText: `**${allScheduledMeetings.length} entrevistas en ${companyName} esta semana:**\n\n${meetingsList}\n\n🔥 **Prioridad máxima de búsqueda**: **${topPrioritySpec ? `${topPrioritySpec.roleTitle} para ${topPrioritySpec.company}` : "CEO para Veloce"}** (Urgencia ${topPrioritySpec?.urgencyRating ?? 10}/10).`,
           navigationTarget: {
             page: "search-candidates",
-            label: "Go to Search Candidates"
+            label: "Ver Search Candidates"
           }
         };
       } else {
@@ -501,7 +519,7 @@ I am built directly into this executive search platform to support your team. He
           .join("\n");
 
         return {
-          responseText: `This week you have **${allScheduledMeetings.length} interviews** scheduled:\n\n${meetingsList}\n\nOn the executive candidate search front, your top priority is the **${topPrioritySpec ? `${topPrioritySpec.roleTitle} for ${topPrioritySpec.company}` : "CEO for Veloce Health & Bio"}** (10/10 urgency), followed by: ${otherSpecs.map(s => `**${s.roleTitle}** (${s.company})`).join(", ")}.\n\nIf you would like, you can navigate directly to the Search Candidates section to view all candidate specifications.`,
+          responseText: `**${allScheduledMeetings.length} interviews scheduled at ${companyName} this week:**\n\n${meetingsList}\n\n🔥 **Top Search Priority**: **${topPrioritySpec ? `${topPrioritySpec.roleTitle} for ${topPrioritySpec.company}` : "CEO for Veloce"}** (Urgency ${topPrioritySpec?.urgencyRating ?? 10}/10).`,
           navigationTarget: {
             page: "search-candidates",
             label: "Go to Search Candidates"
@@ -510,7 +528,7 @@ I am built directly into this executive search platform to support your team. He
       }
     }
 
-    // 2. Specific Weekday Meetings query (e.g. "What meetings do I have on Monday / Wednesday / Martes?")
+    // 7. Specific Weekday Meetings query
     const requestedDay = detectWeekday(qLower);
     const isMeetingQuery =
       qLower.includes("meeting") ||
@@ -534,18 +552,18 @@ I am built directly into this executive search platform to support your team. He
       if (dayMeetings.length === 0) {
         if (isSpanish) {
           return {
-            responseText: `Para el **${targetDay}** tienes la agenda **completamente libre**; no hay ninguna reunión agendada por ahora.\n\nIf you would like, you can navigate directly to the Meetings section to manage your schedule.`,
+            responseText: `**${targetDay}**: Agenda libre en **${companyName}**, sin reuniones programadas.`,
             navigationTarget: {
               page: "meetings",
-              label: "Go to Meetings Schedule"
+              label: "Ver Calendario"
             }
           };
         } else {
           return {
-            responseText: `For **${targetDay}**, your agenda is **completely clear**; you have no meetings scheduled at the moment.\n\nIf you would like, you can navigate directly to the Meetings section to manage your schedule.`,
+            responseText: `**${targetDay}**: Schedule clear at **${companyName}**, 0 meetings scheduled.`,
             navigationTarget: {
               page: "meetings",
-              label: "Go to Meetings Schedule"
+              label: "View Schedule"
             }
           };
         }
@@ -557,10 +575,10 @@ I am built directly into this executive search platform to support your team. He
           .join("\n");
 
         return {
-          responseText: `Para el **${targetDay}**, tienes **${dayMeetings.length} reuniones programadas**:\n\n${meetingsList}\n\nIf you would like, you can navigate directly to the Meetings section to manage your schedule.`,
+          responseText: `**${dayMeetings.length} reuniones para el ${targetDay} en ${companyName}:**\n\n${meetingsList}`,
           navigationTarget: {
             page: "meetings",
-            label: `Go to Meetings (${targetDay})`
+            label: `Abrir Reuniones (${targetDay})`
           }
         };
       } else {
@@ -569,16 +587,16 @@ I am built directly into this executive search platform to support your team. He
           .join("\n");
 
         return {
-          responseText: `For **${targetDay}**, you have **${dayMeetings.length} meetings scheduled**:\n\n${meetingsList}\n\nIf you would like, you can navigate directly to the Meetings section to manage your schedule.`,
+          responseText: `**${dayMeetings.length} meetings on ${targetDay} at ${companyName}:**\n\n${meetingsList}`,
           navigationTarget: {
             page: "meetings",
-            label: `Go to Meetings (${targetDay})`
+            label: `Open Schedule (${targetDay})`
           }
         };
       }
     }
 
-    // 3. Priority Candidates / Most Important Specs query
+    // 8. Priority Candidates / Most Important Specs query
     const isPriorityQuery =
       qLower.includes("importan") ||
       qLower.includes("urgent") ||
@@ -593,20 +611,20 @@ I am built directly into this executive search platform to support your team. He
       const activeSpecs = candidateSpecs.filter((s) => s.status !== "Finded");
       const sortedSpecs = [...activeSpecs].sort((a, b) => (b.urgencyRating ?? 8) - (a.urgencyRating ?? 8));
       const topSpec = sortedSpecs[0];
-      const nextSpecs = sortedSpecs.slice(1);
+      const nextSpecs = sortedSpecs.slice(1, 3);
 
       if (topSpec) {
         if (isSpanish) {
           return {
-            responseText: `Según lo que veo en el sistema, tu perfil más importante y urgente con diferencia es el de **${topSpec.roleTitle} para ${topSpec.company}** (urgencia ${topSpec.urgencyRating ?? 10}/10: ${topSpec.coreChallenge.slice(0, 110)}...).\n\nAparte de ese, los otros perfiles activos que tienes que atender son: **${nextSpecs.map(s => `${s.roleTitle} en ${s.company} (${s.urgencyScore || s.priority})`).join(", ")}**.\n\nIf you would like, you can navigate directly to the Search Candidates section to view all candidate specifications.`,
+            responseText: `**Prioridades de Búsqueda en ${companyName}:**\n\n1. 🔴 **${topSpec.roleTitle} para ${topSpec.company}** (Urgencia ${topSpec.urgencyRating ?? 10}/10: ${topSpec.coreChallenge.slice(0, 90)}...)\n${nextSpecs.map((s, i) => `${i + 2}. **${s.roleTitle}** en **${s.company}**`).join("\n")}`,
             navigationTarget: {
               page: "search-candidates",
-              label: "Go to Search Candidates"
+              label: "Ir a Search Candidates"
             }
           };
         } else {
           return {
-            responseText: `Looking at your talent pipeline, your absolute top priority is the **${topSpec.roleTitle} for ${topSpec.company}** (marked ${topSpec.urgencyRating ?? 10}/10 urgency: ${topSpec.coreChallenge.slice(0, 110)}...).\n\nBeyond that, your other active key searches are: **${nextSpecs.map(s => `${s.roleTitle} at ${s.company} (${s.urgencyScore || s.priority})`).join(", ")}**.\n\nIf you would like, you can navigate directly to the Search Candidates section to view all candidate specifications.`,
+            responseText: `**Top Search Priorities at ${companyName}:**\n\n1. 🔴 **${topSpec.roleTitle} for ${topSpec.company}** (Urgency ${topSpec.urgencyRating ?? 10}/10: ${topSpec.coreChallenge.slice(0, 90)}...)\n${nextSpecs.map((s, i) => `${i + 2}. **${s.roleTitle}** at **${s.company}**`).join("\n")}`,
             navigationTarget: {
               page: "search-candidates",
               label: "Go to Search Candidates"
@@ -616,78 +634,78 @@ I am built directly into this executive search platform to support your team. He
       }
     }
 
-    // 4. Follow-Ups & Email Template query
+    // 9. Follow-Ups & Email Template query
     if (qLower.includes("follow up") || qLower.includes("follow-up") || qLower.includes("plantilla") || qLower.includes("correo") || qLower.includes("email") || qLower.includes("template")) {
       if (isSpanish) {
         return {
-          responseText: `Tenemos configurada la plantilla universal de seguimiento ("*${followUpTemplate.subject}*"). El bot de IA se encarga de enviarla automáticamente a cada candidato **10 minutos después** de finalizar su entrevista.\n\nIf you would like, you can navigate directly to the Follow Ups section to customize your template.`,
+          responseText: `**Plantilla de Seguimiento de ${companyName}:**\n\n• Asunto: *${followUpTemplate.subject}*\n• Envío automático: **10 minutos después** de terminar cada entrevista.`,
           navigationTarget: {
             page: "follow-ups",
-            label: "Go to Follow Ups"
+            label: "Editar Plantilla de Correo"
           }
         };
       } else {
         return {
-          responseText: `We have the universal follow-up email template active ("*${followUpTemplate.subject}*"). The AI automatically dispatches it to each candidate **10 minutes after** their interview finishes.\n\nIf you would like, you can navigate directly to the Follow Ups section to customize your template.`,
+          responseText: `**${companyName} Follow-Up Automation:**\n\n• Subject: *${followUpTemplate.subject}*\n• Automatic dispatch: **10 minutes after** meeting completion.`,
           navigationTarget: {
             page: "follow-ups",
-            label: "Go to Follow Ups"
+            label: "Edit Follow-Up Template"
           }
         };
       }
     }
 
-    // 5. Activity Logs & Telemetry query
+    // 10. Activity Logs query
     if (qLower.includes("log") || qLower.includes("logs") || qLower.includes("audit") || qLower.includes("historial") || qLower.includes("eventos") || qLower.includes("registro")) {
       const recent = logs.slice(0, 2);
       if (isSpanish) {
         return {
-          responseText: `El sistema está registrando toda la actividad con normalidad (${logs.length} eventos en total). Los últimos movimientos incluyen: ${recent.map(l => `*${l.action}*`).join(" y ")}.\n\nIf you would like, you can navigate directly to the Activity Logs section.`,
+          responseText: `**Registro de Auditoría de ${companyName} (${logs.length} eventos):**\n\n${recent.map(l => `• **${l.action}** por ${l.userName} (${l.userRole})`).join("\n")}`,
           navigationTarget: {
             page: "logs",
-            label: "Go to Activity Logs"
+            label: "Ver Activity Logs"
           }
         };
       } else {
         return {
-          responseText: `All operational streams are running cleanly (${logs.length} total audit events). Recent logged actions include: ${recent.map(l => `*${l.action}*`).join(" and ")}.\n\nIf you would like, you can navigate directly to the Activity Logs section.`,
+          responseText: `**${companyName} Audit Stream (${logs.length} events):**\n\n${recent.map(l => `• **${l.action}** by ${l.userName} (${l.userRole})`).join("\n")}`,
           navigationTarget: {
             page: "logs",
-            label: "Go to Activity Logs"
+            label: "View Activity Logs"
           }
         };
       }
     }
 
-    // 6. Casual Greetings / Small talk
+    // 11. Casual Greetings
     const isGreeting = /^(hey|hello|hi|howdy|yo|sup|good morning|good afternoon|good evening|hola|buenas|buenos dias|qué tal|que tal)\b/i.test(qLower);
     if (isGreeting) {
       if (isSpanish) {
         return {
-          responseText: `¡Hola! Todo funcionando al 100%. Puedes preguntarme qué reuniones tienes cualquier día, cuáles son los candidatos más urgentes o cómo van los correos de seguimiento. ¿En qué te ayudo?`
+          responseText: `¡Hola **${ceoFirstName}**! Todo listo en **${companyName}**. ¿Qué métrica, reunión o candidato necesitas revisar?`
         };
       } else {
         return {
-          responseText: `Hey! All systems are operating smoothly. You can ask me what interviews you have on any day, which candidate searches are most urgent, or check follow-up templates. What would you like to know?`
+          responseText: `Hello **${ceoFirstName}**! Everything operational at **${companyName}**. What metric, interview, or candidate search do you need?`
         };
       }
     }
 
-    // 7. General Default Resolution with common sense
+    // 12. Direct Default
     if (isSpanish) {
       return {
-        responseText: `Estoy aquí para ayudarte. Puedes pedirme que te diga qué reuniones tienes hoy o cualquier día de la semana, o qué perfiles de candidatos deberías priorizar ahora mismo.\n\nIf you would like, you can navigate directly to the Meetings section to manage your schedule.`,
+        responseText: `Hola **${ceoFirstName}**, dime directamente qué necesitas de **${companyName}**: métricas de pipeline, agenda de reuniones o prioridades de candidatos.`,
         navigationTarget: {
-          page: "meetings",
-          label: "Go to Meetings Schedule"
+          page: "dashboard",
+          label: "Ver Dashboard de Operaciones"
         }
       };
     } else {
       return {
-        responseText: `I'm here to assist your executive workflow! You can ask me what meetings you have on any day of the week, or which candidate searches are currently most urgent.\n\nIf you would like, you can navigate directly to the Meetings section to manage your schedule.`,
+        responseText: `Hello **${ceoFirstName}**, let me know what you need for **${companyName}**: pipeline metrics, meeting agendas, or candidate search priorities.`,
         navigationTarget: {
-          page: "meetings",
-          label: "Go to Meetings Schedule"
+          page: "dashboard",
+          label: "View Operations Dashboard"
         }
       };
     }
