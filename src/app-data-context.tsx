@@ -200,36 +200,43 @@ export const DEFAULT_WHITE_LABEL: WhiteLabelConfig = {
 export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
-  const company = params.get("company");
+  const company = params.get("company") || params.get("c");
   if (!company) return null;
-  const isClient = params.get("client") === "true" || params.get("view") === "client";
+  const isClient = params.get("client") === "true" || params.get("view") === "client" || params.get("v") === "c";
   return {
     companyName: company,
-    contactName: params.get("contact") || "Partner",
-    industry: params.get("industry") || "Executive Search",
-    tagline: params.get("tagline") || "Executive Talent Intelligence Platform",
-    pipelineMetric: params.get("pipeline") || "$2.8M Pipeline",
-    themeColor: (params.get("color") as any) || "emerald",
-    website: params.get("website") || `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
-    customWelcome: params.get("welcome") || `Exclusive Portal for ${company}`,
+    contactName: params.get("contact") || params.get("p") || params.get("name") || "Managing Partner",
+    industry: params.get("industry") || params.get("ind") || "Executive Search & Retained Mandates",
+    tagline: params.get("tagline") || params.get("tag") || "Enterprise Headhunting & Retainer Platform",
+    pipelineMetric: params.get("pipeline") || params.get("pipe") || "$3.2M Pipeline • 12 Active Retainers",
+    themeColor: (params.get("color") || params.get("clr") || "emerald") as any,
+    website: params.get("website") || params.get("web") || `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
+    customWelcome: params.get("welcome") || params.get("w") || `Custom Portal for ${company}`,
     isCustomized: true,
     isClientView: isClient
   };
 }
 
-export function generateWhiteLabelUrl(config: WhiteLabelConfig): string {
+export function generateWhiteLabelUrl(config: WhiteLabelConfig, customBaseUrl?: string): string {
   if (typeof window === "undefined") return "";
-  const base = `${window.location.origin}${window.location.pathname}`;
+  let base = customBaseUrl?.trim() || `${window.location.origin}${window.location.pathname}`;
+  // Remove trailing slash for clean formatting
+  if (base.endsWith("/")) base = base.slice(0, -1);
+  if (!base.startsWith("http://") && !base.startsWith("https://")) {
+    base = `https://${base}`;
+  }
+  
   const params = new URLSearchParams();
-  params.set("company", config.companyName);
-  params.set("contact", config.contactName);
-  params.set("industry", config.industry);
-  params.set("pipeline", config.pipelineMetric);
-  params.set("color", config.themeColor);
-  params.set("website", config.website);
-  if (config.customWelcome) params.set("welcome", config.customWelcome);
-  params.set("client", "true"); // Direct clean client mode without demo buttons
-  return `${base}?${params.toString()}`;
+  params.set("company", config.companyName || "Avantty");
+  if (config.contactName && config.contactName !== "Elena Vance" && config.contactName !== "Managing Partner") {
+    params.set("contact", config.contactName);
+  }
+  if (config.themeColor && config.themeColor !== "emerald") {
+    params.set("color", config.themeColor);
+  }
+  params.set("client", "true");
+  
+  return `${base}/?${params.toString()}`;
 }
 
 export function getCustomizedFollowUpTemplate(config: WhiteLabelConfig): FollowUpTemplateState {
