@@ -216,12 +216,12 @@ export function AIAssistantChatbot({ currentRole, onRoleChange, onSelectPage }: 
     {
       id: "msg-welcome",
       sender: "bot",
-      text: `👋 ¡Hola **${ceoFirstName}**! Soy tu asistente de operaciones para **${companyName}**.
+      text: `👋 Hello **${ceoFirstName}**! I'm your operations assistant for **${companyName}**.
 
-Voy directo al grano. Puedes preguntarme al instante:
-• **Métricas & Algoritmos**: Pipeline Ponderado, Carga de Socios o Índice de Urgencia.
-• **Candidatos & Mandatos**: Prioridades urgentes, Board Scores o Boolean strings.
-• **Reuniones**: Agenda de hoy o de cualquier día de la semana.`,
+Direct answers to your questions:
+• **Metrics & Formulas**: Weighted Pipeline, Partner Capacity Load, or Urgency Index.
+• **Active Mandates**: Top priority C-Suite searches, Board scores, and hunting grounds.
+• **Interview Schedule**: Today's meetings or any weekday agenda.`,
       timestamp: new Date()
     }
   ]);
@@ -234,12 +234,12 @@ Voy directo al grano. Puedes preguntarme al instante:
           {
             id: "msg-welcome",
             sender: "bot",
-            text: `👋 ¡Hola **${ceoFirstName}**! Soy tu asistente de operaciones para **${companyName}**.
+            text: `👋 Hello **${ceoFirstName}**! I'm your operations assistant for **${companyName}**.
 
-Voy directo al grano. Puedes preguntarme al instante:
-• **Métricas & Algoritmos**: Pipeline Ponderado, Carga de Socios o Índice de Urgencia.
-• **Candidatos & Mandatos**: Prioridades urgentes, Board Scores o Boolean strings.
-• **Reuniones**: Agenda de hoy o de cualquier día de la semana.`,
+Direct answers to your questions:
+• **Metrics & Formulas**: Weighted Pipeline, Partner Capacity Load, or Urgency Index.
+• **Active Mandates**: Top priority C-Suite searches, Board scores, and hunting grounds.
+• **Interview Schedule**: Today's meetings or any weekday agenda.`,
             timestamp: new Date()
           }
         ];
@@ -258,7 +258,7 @@ Voy directo al grano. Puedes preguntarme al instante:
     }
   }, [messages, isOpen]);
 
-  // Helper to detect specific weekday in text (Spanish & English)
+  // Helper to detect specific weekday in text
   const detectWeekday = (text: string): WeekDay | null => {
     const t = text.toLowerCase();
     if (t.includes("monday") || t.includes("lunes")) return "Monday";
@@ -271,16 +271,13 @@ Voy directo al grano. Puedes preguntarme al instante:
     return null;
   };
 
-  // Smart, direct, executive bot response generator
+  // Smart, direct, executive bot response generator in English
   const generateBotResponse = (userQuery: string): {
     responseText: string;
     actionPayload?: ChatMessage["actionPayload"];
     navigationTarget?: ChatMessage["navigationTarget"];
   } => {
     const qLower = userQuery.toLowerCase().trim();
-
-    // Check language
-    const isSpanish = /[áéíóúñ¿¡]|\b(hola|que|qué|quién|quien|como|cómo|tengo|tienes|cuáles|cuales|semana|lunes|martes|miercoles|miércoles|jueves|viernes|hoy|mañana|manana|reuniones|entrevistas|gracias|dime|candidatos|perfiles|plantilla|algoritmo|capacidad|ponderado)\b/i.test(userQuery);
 
     // 0. CEO & Leadership Query
     const isCEOQuery =
@@ -298,15 +295,9 @@ Voy directo al grano. Puedes preguntarme al instante:
       qLower.includes("director general");
 
     if (isCEOQuery) {
-      if (isSpanish) {
-        return {
-          responseText: `Hola **${ceoFirstName}**, el **CEO de ${companyName}** eres tú (**${ceoFullName}**, ${ceoEmail}). Lideras los mandatos C-Suite, la capacidad de socios y la estrategia global de la firma.`
-        };
-      } else {
-        return {
-          responseText: `Hello **${ceoFirstName}**, the **CEO of ${companyName}** is **${ceoFullName}** (${ceoEmail}). Leading all executive search practice operations, partner allocations, and firm governance.`
-        };
-      }
+      return {
+        responseText: `Hello **${ceoFirstName}**, the **CEO of ${companyName}** is **${ceoFullName}** (${ceoEmail}). Leading all executive search practice operations, partner allocations, and firm governance.`
+      };
     }
 
     // 1. Executive Algorithms: Weighted Pipeline Value
@@ -319,23 +310,13 @@ Voy directo al grano. Puedes preguntarme al instante:
       qLower.includes("how is pipeline calculated") ||
       (qLower.includes("pipeline") && (qLower.includes("calcul") || qLower.includes("formula") || qLower.includes("how")))
     ) {
-      if (isSpanish) {
-        return {
-          responseText: `**Cálculo del Pipeline Ponderado en ${companyName}:**\n\n$$\\text{Pipeline} = (\\text{Salario Target} \\times 30\\% \\text{ Fee}) \\times \\text{Probabilidad}$$\n\n• **Longlist (Sourcing)**: **20%**\n• **Shortlist al Cliente**: **50%**\n• **Entrevistas de Consejo (Board)**: **80%**\n• **Closed / Placed**: **100% Facturado** (Pasa a cobrado y libera el retainer activo).`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Ver Pipeline en Search Candidates"
-          }
-        };
-      } else {
-        return {
-          responseText: `**${companyName} Weighted Pipeline Calculation:**\n\n$$\\text{Pipeline Value} = (\\text{Target Salary} \\times 30\\% \\text{ Fee}) \\times \\text{Stage Probability}$$\n\n• **Open Mandate (Sourcing)**: **20%**\n• **Shortlist Presented**: **50%**\n• **Board Interviews**: **80%**\n• **Offer Closed / Placed**: **100% Placed Revenue** (Transfers to collected billings and releases partner retainer).`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "View Pipeline in Search Candidates"
-          }
-        };
-      }
+      return {
+        responseText: `**${companyName} Weighted Pipeline Calculation:**\n\n$$\\text{Pipeline Value} = (\\text{Target Salary} \\times 30\\% \\text{ Fee}) \\times \\text{Stage Probability}$$\n\n• **Open Mandate (Sourcing)**: **20%**\n• **Shortlist Presented**: **50%**\n• **Board Interviews**: **80%**\n• **Offer Closed / Placed**: **100% Placed Revenue** (Transfers to collected billings and releases partner retainer).`,
+        navigationTarget: {
+          page: "search-candidates",
+          label: "View Pipeline in Search Candidates"
+        }
+      };
     }
 
     // 2. Executive Algorithms: Capacity Load & Partners
@@ -347,23 +328,13 @@ Voy directo al grano. Puedes preguntarme al instante:
       qLower.includes("partner capacity") ||
       (qLower.includes("capacity") && (qLower.includes("calcul") || qLower.includes("formula") || qLower.includes("how") || qLower.includes("work")))
     ) {
-      if (isSpanish) {
-        return {
-          responseText: `**Carga de Capacidad de Socios en ${companyName}:**\n\n$$\\text{Carga \\%} = \\left(\\frac{\\text{Mandatos Activos}}{\\text{Socios} \\times 3.5}\\right) \\times 100$$\n\n• **Límite óptimo**: **3.5 mandatos por socio** (máximo 7 mandatos para 2 socios).\n• **Alerta de fricción**: Se activa al superar el **85%** de carga para evitar retrasos con clientes.`,
-          navigationTarget: {
-            page: "dashboard",
-            label: "Ver Capacidad en Dashboard"
-          }
-        };
-      } else {
-        return {
-          responseText: `**${companyName} Partner Capacity Load:**\n\n$$\\text{Capacity Load \\%} = \\left(\\frac{\\text{Active Retainers}}{\\text{Partners} \\times 3.5}\\right) \\times 100$$\n\n• **Benchmark**: **3.5 active mandates per partner** (7 mandates max for 2 partners).\n• **Delay Friction Warning**: Triggers when capacity exceeds **85%**.`,
-          navigationTarget: {
-            page: "dashboard",
-            label: "View Capacity Load on Dashboard"
-          }
-        };
-      }
+      return {
+        responseText: `**${companyName} Partner Capacity Load:**\n\n$$\\text{Capacity Load \\%} = \\left(\\frac{\\text{Active Retainers}}{\\text{Partners} \\times 3.5}\\right) \\times 100$$\n\n• **Benchmark**: **3.5 active retainers per partner** (7 retainers max for 2 partners).\n• **Delay Warning**: Triggers automatically at **85%** capacity to protect SLA delivery speed.`,
+        navigationTarget: {
+          page: "dashboard",
+          label: "View Capacity Load on Dashboard"
+        }
+      };
     }
 
     // 3. Executive Algorithms: Urgency Index
@@ -375,23 +346,13 @@ Voy directo al grano. Puedes preguntarme al instante:
       qLower.includes("how is urgency calculated") ||
       (qLower.includes("urgency") && qLower.includes("calcul"))
     ) {
-      if (isSpanish) {
-        return {
-          responseText: `**Índice de Urgencia de Mandatos:**\n\n$$\\text{Urgency Score} = (\\text{Días Abierto} \\times 1.2) - (\\text{Qual. Candidates} \\times 15)$$\n\n• $\\ge 18$: 🔴 **Delay Risk** (Requiere acelerar sourcing)\n• $5 - 17$: 🟡 **Attention Required**\n• $< 5$: 🟢 **Low Risk / On Track**`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Inspeccionar Urgencias"
-          }
-        };
-      } else {
-        return {
-          responseText: `**Mandate Urgency Index Formula:**\n\n$$\\text{Urgency Score} = (\\text{Days Open} \\times 1.2) - (\\text{Qualified Candidates} \\times 15)$$\n\n• $\\ge 18$: 🔴 **Delay Risk** (Requires immediate sourcing push)\n• $5 - 17$: 🟡 **Attention Required**\n• $< 5$: 🟢 **Low Risk / On Track**`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Inspect Urgency Scores"
-          }
-        };
-      }
+      return {
+        responseText: `**Mandate Urgency Index Formula:**\n\n$$\\text{Urgency Score} = (\\text{Days Open} \\times 1.2) - (\\text{Qualified Candidates} \\times 15)$$\n\n• $\\ge 18$: 🔴 **Delay Risk** (Requires immediate sourcing acceleration)\n• $5 - 17$: 🟡 **Attention Required**\n• $< 5$: 🟢 **Low Risk / On Track**`,
+        navigationTarget: {
+          page: "search-candidates",
+          label: "Inspect Urgency Scores"
+        }
+      };
     }
 
     // 4. Self-Presentation / Functions & Capabilities Query
@@ -410,15 +371,9 @@ Voy directo al grano. Puedes preguntarme al instante:
       qLower.includes("capabilities");
 
     if (isHelpOrCapabilitiesQuery) {
-      if (isSpanish) {
-        return {
-          responseText: `Hola **${ceoFirstName}**, asisto a **${companyName}** en 4 áreas directas:\n\n1. **Métricas**: Auditoría y fórmulas de Pipeline, Carga de Socios y Riesgo.\n2. **Candidatos**: Consultas de perfiles C-Suite, Board Scores y Hunting Grounds.\n3. **Agenda**: Entrevistas semanales, grabación de sesiones y resúmenes.\n4. **Automatización**: Envío de correos de seguimiento y registro en auditoría.`
-        };
-      } else {
-        return {
-          responseText: `Hello **${ceoFirstName}**, I support **${companyName}** across 4 key areas:\n\n1. **Metrics**: Weighted Pipeline, Partner Capacity, and Urgency audits.\n2. **Candidates**: C-Suite talent specs, Board Scores, and Poaching lists.\n3. **Schedule**: Weekly interviews, bot recording sessions, and transcripts.\n4. **Automation**: Follow-up emails and real-time audit ledger logging.`
-        };
-      }
+      return {
+        responseText: `Hello **${ceoFirstName}**, I support **${companyName}** across 4 direct areas:\n\n1. **Metrics**: Live pipeline formulas, capacity load, and urgency indices.\n2. **Candidates**: C-Suite talent specs, Board scores, and hunting grounds.\n3. **Schedule**: Weekly interviews, bot recording status, and meeting archives.\n4. **Automation**: Instant candidate follow-up emails and audit logging.`
+      };
     }
 
     // 5. Priority Intent: Mark meeting as finished / ended from chat
@@ -459,33 +414,18 @@ Voy directo al grano. Puedes preguntarme al instante:
       if (targetMeeting) {
         sourceMeeting(targetMeeting.id, currentRole, targetMeeting.day);
 
-        if (isSpanish) {
-          return {
-            responseText: `Reunión con **${targetMeeting.candidate}** (${targetMeeting.role} en **${targetMeeting.clientCompany}**) marcada como **Meeting Ended** y archivada en auditoría.`,
-            navigationTarget: {
-              page: "meetings",
-              label: "Ver Agenda de Reuniones"
-            },
-            actionPayload: {
-              type: "restore_meeting",
-              label: `Revertir: ${targetMeeting.candidate}`,
-              targetId: targetMeeting.id
-            }
-          };
-        } else {
-          return {
-            responseText: `Meeting with **${targetMeeting.candidate}** (${targetMeeting.role} at **${targetMeeting.clientCompany}**) marked as **Meeting Ended** and archived.`,
-            navigationTarget: {
-              page: "meetings",
-              label: "View Meetings Schedule"
-            },
-            actionPayload: {
-              type: "restore_meeting",
-              label: `Revert: ${targetMeeting.candidate}`,
-              targetId: targetMeeting.id
-            }
-          };
-        }
+        return {
+          responseText: `Meeting with **${targetMeeting.candidate}** (${targetMeeting.role} at **${targetMeeting.clientCompany}**) marked as **Meeting Ended** and archived in audit ledger.`,
+          navigationTarget: {
+            page: "meetings",
+            label: "View Meetings Schedule"
+          },
+          actionPayload: {
+            type: "restore_meeting",
+            label: `Revert: ${targetMeeting.candidate}`,
+            targetId: targetMeeting.id
+          }
+        };
       }
     }
 
@@ -499,33 +439,17 @@ Voy directo al grano. Puedes preguntarme al instante:
         .flatMap(([day, list]) => (list || []).map((m) => ({ ...m, day })));
 
       const topPrioritySpec = [...candidateSpecs].sort((a, b) => (b.urgencyRating ?? 8) - (a.urgencyRating ?? 8))[0];
-      const otherSpecs = candidateSpecs.filter((s) => s.id !== topPrioritySpec?.id && s.status !== "Finded");
+      const meetingsList = allScheduledMeetings
+        .map((m) => `• **${m.day} at ${m.time}** — **${m.candidate}** (${m.role} at **${m.clientCompany}**)`)
+        .join("\n");
 
-      if (isSpanish) {
-        const meetingsList = allScheduledMeetings
-          .map((m) => `• **${m.day} (${m.time})** — **${m.candidate}** (${m.role} en **${m.clientCompany}**)`)
-          .join("\n");
-
-        return {
-          responseText: `**${allScheduledMeetings.length} entrevistas en ${companyName} esta semana:**\n\n${meetingsList}\n\n🔥 **Prioridad máxima de búsqueda**: **${topPrioritySpec ? `${topPrioritySpec.roleTitle} para ${topPrioritySpec.company}` : "CEO para Veloce"}** (Urgencia ${topPrioritySpec?.urgencyRating ?? 10}/10).`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Ver Search Candidates"
-          }
-        };
-      } else {
-        const meetingsList = allScheduledMeetings
-          .map((m) => `• **${m.day} at ${m.time}** — **${m.candidate}** (${m.role} at **${m.clientCompany}**)`)
-          .join("\n");
-
-        return {
-          responseText: `**${allScheduledMeetings.length} interviews scheduled at ${companyName} this week:**\n\n${meetingsList}\n\n🔥 **Top Search Priority**: **${topPrioritySpec ? `${topPrioritySpec.roleTitle} for ${topPrioritySpec.company}` : "CEO for Veloce"}** (Urgency ${topPrioritySpec?.urgencyRating ?? 10}/10).`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Go to Search Candidates"
-          }
-        };
-      }
+      return {
+        responseText: `**${allScheduledMeetings.length} interviews scheduled at ${companyName} this week:**\n\n${meetingsList}\n\n🔥 **Top Search Priority**: **${topPrioritySpec ? `${topPrioritySpec.roleTitle} for ${topPrioritySpec.company}` : "CEO for Veloce"}** (Urgency ${topPrioritySpec?.urgencyRating ?? 10}/10).`,
+        navigationTarget: {
+          page: "search-candidates",
+          label: "Go to Search Candidates"
+        }
+      };
     }
 
     // 7. Specific Weekday Meetings query
@@ -550,50 +474,26 @@ Voy directo al grano. Puedes preguntarme al instante:
       const dayMeetings = meetingsByDay[targetDay] || [];
 
       if (dayMeetings.length === 0) {
-        if (isSpanish) {
-          return {
-            responseText: `**${targetDay}**: Agenda libre en **${companyName}**, sin reuniones programadas.`,
-            navigationTarget: {
-              page: "meetings",
-              label: "Ver Calendario"
-            }
-          };
-        } else {
-          return {
-            responseText: `**${targetDay}**: Schedule clear at **${companyName}**, 0 meetings scheduled.`,
-            navigationTarget: {
-              page: "meetings",
-              label: "View Schedule"
-            }
-          };
+        return {
+          responseText: `**${targetDay}**: Schedule clear at **${companyName}**, 0 meetings scheduled.`,
+          navigationTarget: {
+            page: "meetings",
+            label: "View Schedule"
+          }
+        };
+      }
+
+      const meetingsList = dayMeetings
+        .map((m) => `• **${m.time}** — **${m.candidate}** (${m.role} at **${m.clientCompany}**)`)
+        .join("\n");
+
+      return {
+        responseText: `**${dayMeetings.length} meetings on ${targetDay} at ${companyName}:**\n\n${meetingsList}`,
+        navigationTarget: {
+          page: "meetings",
+          label: `Open Schedule (${targetDay})`
         }
-      }
-
-      if (isSpanish) {
-        const meetingsList = dayMeetings
-          .map((m) => `• **${m.time}** — **${m.candidate}** (${m.role} en **${m.clientCompany}**)`)
-          .join("\n");
-
-        return {
-          responseText: `**${dayMeetings.length} reuniones para el ${targetDay} en ${companyName}:**\n\n${meetingsList}`,
-          navigationTarget: {
-            page: "meetings",
-            label: `Abrir Reuniones (${targetDay})`
-          }
-        };
-      } else {
-        const meetingsList = dayMeetings
-          .map((m) => `• **${m.time}** — **${m.candidate}** (${m.role} at **${m.clientCompany}**)`)
-          .join("\n");
-
-        return {
-          responseText: `**${dayMeetings.length} meetings on ${targetDay} at ${companyName}:**\n\n${meetingsList}`,
-          navigationTarget: {
-            page: "meetings",
-            label: `Open Schedule (${targetDay})`
-          }
-        };
-      }
+      };
     }
 
     // 8. Priority Candidates / Most Important Specs query
@@ -614,101 +514,55 @@ Voy directo al grano. Puedes preguntarme al instante:
       const nextSpecs = sortedSpecs.slice(1, 3);
 
       if (topSpec) {
-        if (isSpanish) {
-          return {
-            responseText: `**Prioridades de Búsqueda en ${companyName}:**\n\n1. 🔴 **${topSpec.roleTitle} para ${topSpec.company}** (Urgencia ${topSpec.urgencyRating ?? 10}/10: ${topSpec.coreChallenge.slice(0, 90)}...)\n${nextSpecs.map((s, i) => `${i + 2}. **${s.roleTitle}** en **${s.company}**`).join("\n")}`,
-            navigationTarget: {
-              page: "search-candidates",
-              label: "Ir a Search Candidates"
-            }
-          };
-        } else {
-          return {
-            responseText: `**Top Search Priorities at ${companyName}:**\n\n1. 🔴 **${topSpec.roleTitle} for ${topSpec.company}** (Urgency ${topSpec.urgencyRating ?? 10}/10: ${topSpec.coreChallenge.slice(0, 90)}...)\n${nextSpecs.map((s, i) => `${i + 2}. **${s.roleTitle}** at **${s.company}**`).join("\n")}`,
-            navigationTarget: {
-              page: "search-candidates",
-              label: "Go to Search Candidates"
-            }
-          };
-        }
+        return {
+          responseText: `**Top Search Priorities at ${companyName}:**\n\n1. 🔴 **${topSpec.roleTitle} for ${topSpec.company}** (Urgency ${topSpec.urgencyRating ?? 10}/10: ${topSpec.coreChallenge.slice(0, 90)}...)\n${nextSpecs.map((s, i) => `${i + 2}. **${s.roleTitle}** at **${s.company}**`).join("\n")}`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "Go to Search Candidates"
+          }
+        };
       }
     }
 
     // 9. Follow-Ups & Email Template query
     if (qLower.includes("follow up") || qLower.includes("follow-up") || qLower.includes("plantilla") || qLower.includes("correo") || qLower.includes("email") || qLower.includes("template")) {
-      if (isSpanish) {
-        return {
-          responseText: `**Plantilla de Seguimiento de ${companyName}:**\n\n• Asunto: *${followUpTemplate.subject}*\n• Envío automático: **10 minutos después** de terminar cada entrevista.`,
-          navigationTarget: {
-            page: "follow-ups",
-            label: "Editar Plantilla de Correo"
-          }
-        };
-      } else {
-        return {
-          responseText: `**${companyName} Follow-Up Automation:**\n\n• Subject: *${followUpTemplate.subject}*\n• Automatic dispatch: **10 minutes after** meeting completion.`,
-          navigationTarget: {
-            page: "follow-ups",
-            label: "Edit Follow-Up Template"
-          }
-        };
-      }
+      return {
+        responseText: `**${companyName} Follow-Up Automation:**\n\n• Subject: *${followUpTemplate.subject}*\n• Automatic dispatch: **10 minutes after** meeting completion.`,
+        navigationTarget: {
+          page: "follow-ups",
+          label: "Edit Follow-Up Template"
+        }
+      };
     }
 
     // 10. Activity Logs query
     if (qLower.includes("log") || qLower.includes("logs") || qLower.includes("audit") || qLower.includes("historial") || qLower.includes("eventos") || qLower.includes("registro")) {
       const recent = logs.slice(0, 2);
-      if (isSpanish) {
-        return {
-          responseText: `**Registro de Auditoría de ${companyName} (${logs.length} eventos):**\n\n${recent.map(l => `• **${l.action}** por ${l.userName} (${l.userRole})`).join("\n")}`,
-          navigationTarget: {
-            page: "logs",
-            label: "Ver Activity Logs"
-          }
-        };
-      } else {
-        return {
-          responseText: `**${companyName} Audit Stream (${logs.length} events):**\n\n${recent.map(l => `• **${l.action}** by ${l.userName} (${l.userRole})`).join("\n")}`,
-          navigationTarget: {
-            page: "logs",
-            label: "View Activity Logs"
-          }
-        };
-      }
+      return {
+        responseText: `**${companyName} Audit Stream (${logs.length} events):**\n\n${recent.map(l => `• **${l.action}** by ${l.userName} (${l.userRole})`).join("\n")}`,
+        navigationTarget: {
+          page: "logs",
+          label: "View Activity Logs"
+        }
+      };
     }
 
     // 11. Casual Greetings
     const isGreeting = /^(hey|hello|hi|howdy|yo|sup|good morning|good afternoon|good evening|hola|buenas|buenos dias|qué tal|que tal)\b/i.test(qLower);
     if (isGreeting) {
-      if (isSpanish) {
-        return {
-          responseText: `¡Hola **${ceoFirstName}**! Todo listo en **${companyName}**. ¿Qué métrica, reunión o candidato necesitas revisar?`
-        };
-      } else {
-        return {
-          responseText: `Hello **${ceoFirstName}**! Everything operational at **${companyName}**. What metric, interview, or candidate search do you need?`
-        };
-      }
+      return {
+        responseText: `Hello **${ceoFirstName}**! Everything operational at **${companyName}**. What metric, interview, or candidate search do you need?`
+      };
     }
 
     // 12. Direct Default
-    if (isSpanish) {
-      return {
-        responseText: `Hola **${ceoFirstName}**, dime directamente qué necesitas de **${companyName}**: métricas de pipeline, agenda de reuniones o prioridades de candidatos.`,
-        navigationTarget: {
-          page: "dashboard",
-          label: "Ver Dashboard de Operaciones"
-        }
-      };
-    } else {
-      return {
-        responseText: `Hello **${ceoFirstName}**, let me know what you need for **${companyName}**: pipeline metrics, meeting agendas, or candidate search priorities.`,
-        navigationTarget: {
-          page: "dashboard",
-          label: "View Operations Dashboard"
-        }
-      };
-    }
+    return {
+      responseText: `Hello **${ceoFirstName}**, let me know what you need for **${companyName}**: pipeline metrics, interview schedules, or candidate search priorities.`,
+      navigationTarget: {
+        page: "dashboard",
+        label: "View Operations Dashboard"
+      }
+    };
   };
 
   const handleSendMessage = (e?: React.FormEvent) => {

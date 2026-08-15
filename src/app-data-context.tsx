@@ -92,7 +92,7 @@ export function getDynamicTeamAccounts(config: WhiteLabelConfig): TeamAccount[] 
   const website = rawWeb.toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
   const ceoName = (config.isCustomized && config.contactName && config.contactName.trim())
     ? config.contactName.trim()
-    : "Elena Vance";
+    : "Naim Ramos";
     
   const isMale = detectIsMale(ceoName);
   const ceoAvatar = isMale ? MALE_AVATAR : FEMALE_AVATAR;
@@ -141,16 +141,16 @@ export function getDynamicUser(role: UserRole, config: WhiteLabelConfig) {
 export const INITIAL_TEAM_ACCOUNTS: TeamAccount[] = [
   {
     id: "acc-1",
-    name: "Elena Vance",
-    email: "ceo@avantty.com",
-    avatar: FEMALE_AVATAR,
+    name: "Naim Ramos",
+    email: "naim@avanttyops.com",
+    avatar: MALE_AVATAR,
     role: "CEO",
     title: "Managing Partner & CEO"
   },
   {
     id: "acc-2",
     name: "Carlos Mendez",
-    email: "recruiter@avantty.com",
+    email: "recruiter@avanttyops.com",
     avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80",
     role: "Recruiter",
     title: "Senior Headhunting Consultant"
@@ -158,7 +158,7 @@ export const INITIAL_TEAM_ACCOUNTS: TeamAccount[] = [
   {
     id: "acc-3",
     name: "Sofia Chen",
-    email: "sourcer@avantty.com",
+    email: "sourcer@avanttyops.com",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
     role: "Sourcer",
     title: "Executive Talent Sourcer"
@@ -186,12 +186,12 @@ export interface WhiteLabelConfig {
 
 export const DEFAULT_WHITE_LABEL: WhiteLabelConfig = {
   companyName: "Avantty",
-  contactName: "Elena Vance",
+  contactName: "Naim Ramos",
   industry: "Executive Search & Retained Mandates",
   tagline: "Enterprise Headhunting & Retainer Platform",
   pipelineMetric: "$2.4M Pipeline • 12 Active Retainers",
   themeColor: "emerald",
-  website: "avantty.com",
+  website: "avanttyops.com",
   customWelcome: "Executive Search Command Center",
   isCustomized: false,
   isClientView: false
@@ -295,7 +295,7 @@ export function generateWhiteLabelUrl(
   
   const params = new URLSearchParams();
   params.set("c", config.companyName || "Avantty");
-  if (config.contactName && config.contactName !== "Elena Vance" && config.contactName !== "Managing Partner") {
+  if (config.contactName && config.contactName !== "Naim Ramos" && config.contactName !== "Managing Partner") {
     params.set("p", config.contactName);
   }
   if (config.themeColor && config.themeColor !== "emerald") {

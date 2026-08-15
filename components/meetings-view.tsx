@@ -190,7 +190,7 @@ export const INITIAL_MEETINGS_BY_DAY: Record<WeekDay, MeetingItem[]> = {
       coreStrengths: "Published 15+ peer-reviewed papers at NeurIPS/ICLR on LLM reasoning and inference latency reduction; transitioned 4 foundational models to commercial production.",
       riskFactors: "High market demand; receiving competing offers from global AI labs; requires fast decision turnaround from client board.",
       placementVerdict: "TIER-1 PRIORITY CANDIDATE: Execute rapid offer alignment and schedule immediate dinner meeting with Nexus AI Labs Founder & CEO.",
-      interviewer: "Elena Vance (Managing Partner)",
+      interviewer: "Naim Ramos (Managing Partner)",
       status: "upcoming",
       type: "Final Executive Partner Placement Sync",
       link: "https://meet.google.com/atk-ai-final",

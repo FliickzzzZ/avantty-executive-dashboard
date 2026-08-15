@@ -66,7 +66,7 @@ const MEETINGS_TODAY: Meeting[] = [
     time: "05:15 PM",
     candidate: "Aria Takahashi",
     role: "Chief AI Officer (CAIO)",
-    interviewer: "Elena Vance (Managing Partner)",
+    interviewer: "Naim Ramos (Managing Partner)",
     status: "upcoming",
     type: "Final Executive Placement Sync",
   },
