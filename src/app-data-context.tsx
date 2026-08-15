@@ -406,17 +406,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } catch (e) {}
       return urlConfig;
     }
-    const saved = localStorage.getItem("avantty_white_label");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.companyName) {
-          return { ...DEFAULT_WHITE_LABEL, ...parsed };
-        }
-      } catch (e) {
-        // fallback
-      }
-    }
+    // Main domain always opens with your real company Avantty and real name Naim Ramos
     return DEFAULT_WHITE_LABEL;
   });
 
