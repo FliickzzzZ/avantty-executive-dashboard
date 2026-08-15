@@ -199,11 +199,16 @@ export const DEFAULT_WHITE_LABEL: WhiteLabelConfig = {
 
 export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
   if (typeof window === "undefined") return null;
-  const params = new URLSearchParams(window.location.search);
+  const search = window.location.search;
+  const hash = window.location.hash;
+  const params = new URLSearchParams(search || (hash.startsWith("#?") ? hash.slice(1) : ""));
+  
   const company = params.get("company") || params.get("c");
   if (!company) return null;
-  const isClient = params.get("client") === "true" || params.get("view") === "client" || params.get("v") === "c";
-  return {
+  
+  const isClient = params.get("client") === "true" || params.get("view") === "client" || params.get("v") === "c" || params.get("cl") === "1";
+  
+  const config: WhiteLabelConfig = {
     companyName: company,
     contactName: params.get("contact") || params.get("p") || params.get("name") || "Managing Partner",
     industry: params.get("industry") || params.get("ind") || "Executive Search & Retained Mandates",
@@ -215,6 +220,17 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
     isCustomized: true,
     isClientView: isClient
   };
+
+  // Automatically clean and scrub the browser address bar immediately
+  // So the user and client ONLY see: https://demodashboard.avanttyops.com/
+  try {
+    const cleanUrl = window.location.pathname || "/";
+    window.history.replaceState({}, document.title, cleanUrl);
+  } catch (e) {
+    // Ignore in non-browser environments
+  }
+
+  return config;
 }
 
 export function generateWhiteLabelUrl(config: WhiteLabelConfig, customBaseUrl?: string): string {
@@ -227,14 +243,14 @@ export function generateWhiteLabelUrl(config: WhiteLabelConfig, customBaseUrl?: 
   }
   
   const params = new URLSearchParams();
-  params.set("company", config.companyName || "Avantty");
+  params.set("c", config.companyName || "Avantty");
   if (config.contactName && config.contactName !== "Elena Vance" && config.contactName !== "Managing Partner") {
-    params.set("contact", config.contactName);
+    params.set("p", config.contactName);
   }
   if (config.themeColor && config.themeColor !== "emerald") {
-    params.set("color", config.themeColor);
+    params.set("clr", config.themeColor);
   }
-  params.set("client", "true");
+  params.set("cl", "1");
   
   return `${base}/?${params.toString()}`;
 }
@@ -334,6 +350,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [whiteLabelConfig, setWhiteLabelConfig] = useState<WhiteLabelConfig>(() => {
     const urlConfig = parseWhiteLabelFromUrl();
     if (urlConfig) {
+      try {
+        localStorage.setItem("avantty_white_label", JSON.stringify(urlConfig));
+      } catch (e) {}
       return urlConfig;
     }
     const saved = localStorage.getItem("avantty_white_label");
