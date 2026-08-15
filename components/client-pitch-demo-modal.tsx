@@ -128,10 +128,10 @@ export function ClientPitchDemoModal() {
   const [copied, setCopied] = useState(false);
   const [appliedNotification, setAppliedNotification] = useState(false);
   const [customDomain, setCustomDomain] = useState<string>(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && window.location.origin !== "null") {
       return window.location.origin;
     }
-    return "https://avantty-dashboard.vercel.app";
+    return "https://demodashboard.avanttyops.app";
   });
 
   useLockBodyScroll(isDemoModalOpen);
@@ -141,7 +141,7 @@ export function ClientPitchDemoModal() {
       setFormData(whiteLabelConfig);
       setCopied(false);
       setAppliedNotification(false);
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && window.location.origin !== "null") {
         setCustomDomain(window.location.origin);
       }
     }
@@ -339,7 +339,7 @@ export function ClientPitchDemoModal() {
                   <Input
                     value={customDomain}
                     onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="https://avantty-portal.vercel.app o tu dominio"
+                    placeholder="https://demodashboard.avanttyops.app o tu dominio"
                     className="font-mono text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 h-8"
                   />
                 </div>
