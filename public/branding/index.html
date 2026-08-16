@@ -310,8 +310,24 @@
         ctx.fillText('Executive Search Firm Automations', 360, 215);
         ctx.restore();
 
-        // Avantty Logo Emblem on Right Side (Black / Obsidian)
-        drawAvanttyIcon(ctx, w - 220, h / 2 + 5, 120, '#0B132B');
+        // White Circular Badge with Soft Drop Shadow & Border Ring
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(w - 220, h / 2, 85, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.14)';
+        ctx.shadowBlur = 28;
+        ctx.shadowOffsetY = 8;
+        ctx.shadowOffsetX = 0;
+        ctx.fill();
+
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+
+        // Avantty Logo Emblem inside the Circular Badge
+        drawAvanttyIcon(ctx, w - 220, h / 2 + 3, 72, '#0B132B');
       } else {
         // OBSIDIAN DARK THEME
         const grad = ctx.createLinearGradient(0, 0, w, h);
@@ -340,7 +356,7 @@
         ctx.fill();
         ctx.restore();
 
-        drawAvanttyIcon(ctx, w - 220, h / 2 + 5, 85, '#0B132B');
+        drawAvanttyIcon(ctx, w - 220, h / 2 + 3, 72, '#0B132B');
       }
     }
 
@@ -354,7 +370,12 @@
 
     function downloadLogoSVG() {
       const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
-  <circle cx="400" cy="400" r="360" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="12" />
+  <defs>
+    <filter id="logoShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <circle cx="400" cy="400" r="360" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="12" filter="url(#logoShadow)"/>
   <path d="M400,245 L538,545 L472,545 L400,380 L328,545 L262,545 Z" fill="#0B132B"/>
   <polygon points="400,416 448,545 352,545" fill="#0B132B"/>
 </svg>`;
@@ -369,28 +390,35 @@
 
     function downloadBannerSVG() {
       const isWhite = currentBannerTheme === 'white';
-      const bg = isWhite ? '#FFFFFF' : '#0B1325';
-      const textColor = isWhite ? '#0B132B' : '#FFFFFF';
-      const logoColor = '#0B132B';
-
       let svgContent = '';
       if (isWhite) {
         svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1584 396" width="1584" height="396">
+  <defs>
+    <filter id="badgeShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000000" flood-opacity="0.14"/>
+    </filter>
+  </defs>
   <rect width="1584" height="396" fill="#FFFFFF"/>
   <text x="360" y="215" fill="#0B132B" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="52" letter-spacing="-0.03em">Executive Search Firm Automations</text>
-  <g transform="translate(1364, 203)">
-    <path d="M0,-66 L55,54 L29,54 L0,-12 L-29,54 L-55,54 Z" fill="#0B132B"/>
-    <polygon points="0,2 19,54 -19,54" fill="#0B132B"/>
+  <circle cx="1364" cy="198" r="85" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="3" filter="url(#badgeShadow)"/>
+  <g transform="translate(1364, 201)">
+    <path d="M0,-40 L33,32 L17,32 L0,-7 L-17,32 L-33,32 Z" fill="#0B132B"/>
+    <polygon points="0,1 12,32 -12,32" fill="#0B132B"/>
   </g>
 </svg>`;
       } else {
         svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1584 396" width="1584" height="396">
+  <defs>
+    <filter id="badgeShadowDark" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
   <rect width="1584" height="396" fill="#070B14"/>
   <text x="360" y="215" fill="#FFFFFF" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="52" letter-spacing="-0.03em">Executive Search Firm Automations</text>
-  <circle cx="1364" cy="198" r="85" fill="#FFFFFF"/>
-  <g transform="translate(1364, 203)">
-    <path d="M0,-47 L39,38 L20,38 L0,-9 L-20,38 L-39,38 Z" fill="#0B132B"/>
-    <polygon points="0,1 14,38 -14,38" fill="#0B132B"/>
+  <circle cx="1364" cy="198" r="85" fill="#FFFFFF" filter="url(#badgeShadowDark)"/>
+  <g transform="translate(1364, 201)">
+    <path d="M0,-40 L33,32 L17,32 L0,-7 L-17,32 L-33,32 Z" fill="#0B132B"/>
+    <polygon points="0,1 12,32 -12,32" fill="#0B132B"/>
   </g>
 </svg>`;
       }
