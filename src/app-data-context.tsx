@@ -220,10 +220,12 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
   const hostname = window.location.hostname.toLowerCase();
   const search = window.location.search;
   const hash = window.location.hash;
-  const pathname = window.location.pathname;
+  const pathname = window.location.pathname.toLowerCase();
   const params = new URLSearchParams(search || (hash.startsWith("#?") ? hash.slice(1) : ""));
   
   let company = params.get("company") || params.get("c");
+  let contact = params.get("contact") || params.get("p") || params.get("name");
+  let isFromSlug = false;
   
   // 1. Detect subdomain format: demodashboard-empresa.avanttyops.com
   if (!company && hostname.includes("demodashboard-")) {
@@ -231,24 +233,38 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
     const extracted = subPart.replace("demodashboard-", "").trim();
     if (extracted) {
       company = unslugifyCompanyName(extracted);
+      isFromSlug = true;
     }
   }
   
-  // 2. Detect clean pathname format: /artificially or /p/artificially
+  // 2. Detect clean pathname format: /artificially or /buckingham or /worth
   if (!company && pathname && pathname !== "/" && !pathname.includes(".")) {
     const cleanPath = pathname.replace(/^\/(p\/)?/, "").replace(/\/$/, "").trim();
-    if (cleanPath && !["dashboard", "candidates", "meetings", "logs", "login", "admin", "index"].includes(cleanPath)) {
-      company = unslugifyCompanyName(cleanPath);
+    const systemRoutes = ["dashboard", "candidates", "meetings", "logs", "login", "admin", "index"];
+    if (cleanPath && !systemRoutes.includes(cleanPath)) {
+      isFromSlug = true;
+      if (cleanPath === "artificially" || cleanPath === "fernando") {
+        company = "Artificially";
+        contact = "Fernando Tomé";
+      } else if (cleanPath === "buckingham" || cleanPath === "buckinghamsearch" || cleanPath === "marcus") {
+        company = "Buckingham Search";
+        contact = "Marcus Vance";
+      } else if (cleanPath === "worth" || cleanPath === "worthsearch" || cleanPath === "victoria") {
+        company = "Worth Search";
+        contact = "Victoria Sterling";
+      } else {
+        company = unslugifyCompanyName(cleanPath);
+      }
     }
   }
 
   if (!company) return null;
   
-  const isClient = params.get("client") === "true" || params.get("view") === "client" || params.get("v") === "c" || params.get("cl") === "1" || hostname.includes("demodashboard-");
+  const isClient = isFromSlug || params.get("client") === "true" || params.get("view") === "client" || params.get("v") === "c" || params.get("cl") === "1" || hostname.includes("demodashboard-");
   
   const config: WhiteLabelConfig = {
     companyName: company,
-    contactName: params.get("contact") || params.get("p") || params.get("name") || "Managing Partner",
+    contactName: contact || "Managing Partner",
     industry: params.get("industry") || params.get("ind") || "Executive Search & Retained Mandates",
     tagline: params.get("tagline") || params.get("tag") || "Enterprise Headhunting & Retainer Platform",
     pipelineMetric: params.get("pipeline") || params.get("pipe") || "$3.2M Pipeline • 12 Active Retainers",
@@ -265,25 +281,27 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
 export function generateWhiteLabelUrl(
   config: WhiteLabelConfig, 
   customBaseUrl?: string,
-  mode: "subdomain" | "query" = "query"
+  mode: "slug" | "subdomain" | "query" = "slug"
 ): string {
   if (typeof window === "undefined") return "";
   
   const companySlug = slugifyCompanyName(config.companyName || "client");
+  const base = "https://demodashboard.avanttyops.com";
   
   if (mode === "subdomain") {
     // Generates: https://demodashboard-empresa.avanttyops.com
     return `https://demodashboard-${companySlug}.avanttyops.com`;
   }
+
+  if (mode === "slug" || (!config.contactName || config.contactName === "Fernando Tomé" || config.contactName === "Managing Partner")) {
+    // Generates ultra-clean path: https://demodashboard.avanttyops.com/artificially
+    return `${base}/${companySlug}`;
+  }
   
-  const base = "https://demodashboard.avanttyops.com";
   const params = new URLSearchParams();
   params.set("company", config.companyName || "Avantty");
   if (config.contactName) {
     params.set("contact", config.contactName);
-  }
-  if (config.themeColor && config.themeColor !== "emerald") {
-    params.set("color", config.themeColor);
   }
   params.set("client", "true");
   

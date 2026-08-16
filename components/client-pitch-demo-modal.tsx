@@ -127,7 +127,7 @@ export function ClientPitchDemoModal() {
   const [formData, setFormData] = useState<WhiteLabelConfig>(whiteLabelConfig);
   const [copied, setCopied] = useState(false);
   const [appliedNotification, setAppliedNotification] = useState(false);
-  const [linkMode, setLinkMode] = useState<"subdomain" | "query">("query");
+  const [linkMode, setLinkMode] = useState<"slug" | "subdomain" | "query">("slug");
   const [customDomain, setCustomDomain] = useState<string>(() => {
     if (typeof window !== "undefined" && window.location.origin !== "null") {
       return window.location.origin;
@@ -334,8 +334,26 @@ export function ClientPitchDemoModal() {
                 </span>
               </div>
 
-              {/* Format Toggle: Subdomain VIP vs Clean Parameter */}
+              {/* Format Toggle: Ultra-Clean Route Slug vs Subdomain VIP */}
               <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLinkMode("slug")}
+                  className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                    linkMode === "slug"
+                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white ring-1 ring-emerald-500/20"
+                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                  }`}
+                >
+                  <p className="text-xs font-bold flex items-center justify-between">
+                    <span>Enlace Ultra Clean (Slug)</span>
+                    {linkMode === "slug" && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
+                    demodashboard.avanttyops.com/{slugifyCompanyName(formData.companyName)}
+                  </p>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setLinkMode("subdomain")}
@@ -351,24 +369,6 @@ export function ClientPitchDemoModal() {
                   </p>
                   <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
                     demodashboard-{slugifyCompanyName(formData.companyName)}.avanttyops.com
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setLinkMode("query")}
-                  className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
-                    linkMode === "query"
-                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white ring-1 ring-emerald-500/20"
-                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                  }`}
-                >
-                  <p className="text-xs font-bold flex items-center justify-between">
-                    <span>Enlace Auto-Limpiable</span>
-                    {linkMode === "query" && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
-                  </p>
-                  <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
-                    demodashboard.avanttyops.com (Scrubbing)
                   </p>
                 </button>
               </div>
