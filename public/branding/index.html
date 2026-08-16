@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avantty — LinkedIn Branding Assets</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      background: #090D16;
+      color: #F8FAFC;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10B981;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 36px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    p.subtitle {
+      color: #94A3B8;
+      font-size: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      margin-bottom: 40px;
+    }
+    @media (min-width: 900px) {
+      .grid-2 {
+        grid-template-columns: 360px 1fr;
+      }
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #F1F5F9;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: #64748B;
+      margin-bottom: 20px;
+    }
+    .preview-box {
+      background: #020617;
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed #334155;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+    }
+    .btn-primary {
+      background: #10B981;
+      color: #022C22;
+    }
+    .btn-primary:hover {
+      background: #059669;
+      color: #FFFFFF;
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #F8FAFC;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Avantty Branding Kit</div>
+      <h1>Activos Oficiales de LinkedIn</h1>
+      <p class="subtitle">Descarga en alta resolución (4K) tu nuevo logo y banner optimizados con las dimensiones exactas de LinkedIn.</p>
+    </header>
+
+    <div class="grid grid-2">
+      <!-- LOGO CARD -->
+      <div class="card">
+        <div class="card-title">
+          <span>Logo de Perfil</span>
+          <span style="font-size: 11px; color: #10B981; font-family: monospace;">800 × 800 px</span>
+        </div>
+        <p class="card-desc">Formato cuadrado 1:1 con círculo blanco y emblema 'A' en azul marino obsidiana.</p>
+        <div class="preview-box">
+          <canvas id="logoCanvas" width="800" height="800" style="width: 200px; height: 200px;"></canvas>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="downloadCanvas('logoCanvas', 'avantty-linkedin-logo-800x800.png')">
+            Descargar Logo (PNG)
+          </button>
+          <button class="btn btn-secondary" onclick="downloadLogoSVG()">
+            Descargar SVG
+          </button>
+        </div>
+      </div>
+
+      <!-- BANNER CARD -->
+      <div class="card">
+        <div class="card-title">
+          <span>Banner de Portada</span>
+          <span style="font-size: 11px; color: #10B981; font-family: monospace;">1584 × 396 px (LinkedIn Oficial)</span>
+        </div>
+        <p class="card-desc">Banner panorámico con tipografía premium, logo 'A' y la frase <strong>Executive Search Firm Automations</strong>.</p>
+        <div class="preview-box">
+          <canvas id="bannerCanvas" width="1584" height="396" style="width: 100%;"></canvas>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="downloadCanvas('bannerCanvas', 'avantty-linkedin-banner-1584x396.png')">
+            Descargar Banner Oficial (PNG 1584x396)
+          </button>
+          <button class="btn btn-secondary" onclick="downloadBannerSVG()">
+            Descargar SVG
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Draw Logo
+    function drawLogo() {
+      const canvas = document.getElementById('logoCanvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Clean background (transparent or dark container)
+      ctx.clearRect(0, 0, 800, 800);
+      
+      // Soft background glow
+      const bgGrad = ctx.createRadialGradient(400, 400, 200, 400, 400, 400);
+      bgGrad.addColorStop(0, 'rgba(16, 185, 129, 0.05)');
+      bgGrad.addColorStop(1, 'rgba(2, 6, 23, 0)');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 800, 800);
+
+      // Outer White Circle
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(400, 400, 360, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetY = 10;
+      ctx.fill();
+
+      // Subtle border ring
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 12;
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw Avantty Geometric 'A' Logo
+      drawAvanttyIcon(ctx, 400, 410, 300, '#0B132B');
+    }
+
+    // Draw Avantty Icon function
+    function drawAvanttyIcon(ctx, cx, cy, size, color) {
+      ctx.save();
+      ctx.fillStyle = color;
+
+      // Outer Triangle / Chevron legs of 'A'
+      const topY = cy - size * 0.55;
+      const botY = cy + size * 0.45;
+      const leftX = cx - size * 0.46;
+      const rightX = cx + size * 0.46;
+
+      ctx.beginPath();
+      // Apex
+      ctx.moveTo(cx, topY);
+      // Outer Right
+      ctx.lineTo(rightX, botY);
+      // Bottom Right Inner
+      ctx.lineTo(rightX - size * 0.22, botY);
+      // Inner Apex
+      ctx.lineTo(cx, topY + size * 0.45);
+      // Bottom Left Inner
+      ctx.lineTo(leftX + size * 0.22, botY);
+      // Outer Left
+      ctx.lineTo(leftX, botY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner Center Triangle
+      const innerSize = size * 0.32;
+      const innerTopY = cy + size * 0.02;
+      const innerBotY = botY;
+      ctx.beginPath();
+      ctx.moveTo(cx, innerTopY);
+      ctx.lineTo(cx + innerSize * 0.5, innerBotY);
+      ctx.lineTo(cx - innerSize * 0.5, innerBotY);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // Draw Banner
+    function drawBanner() {
+      const canvas = document.getElementById('bannerCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = 1584;
+      const h = 396;
+
+      // Background Gradient
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, '#070B14');
+      grad.addColorStop(0.5, '#0B1325');
+      grad.addColorStop(1, '#050811');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle modern grid pattern
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+      ctx.lineWidth = 1;
+      const gridSize = 44;
+      for (let x = 0; x < w; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // High-tech subtle emerald glow on top right
+      const glow = ctx.createRadialGradient(w - 250, h / 2, 50, w - 250, h / 2, 400);
+      glow.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+      glow.addColorStop(1, 'rgba(16, 185, 129, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, w, h);
+
+      // Left Brand Tag Badge
+      ctx.save();
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.35)';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, 360, 68, 165, 34, 17);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#10B981';
+      ctx.font = '700 13px "Plus Jakarta Sans"';
+      ctx.fillText('AVANTTY PLATFORM', 376, 90);
+      ctx.restore();
+
+      // Main Phrase: Executive Search Firm Automations
+      ctx.save();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '800 48px "Plus Jakarta Sans"';
+      ctx.letterSpacing = '-0.02em';
+      ctx.fillText('Executive Search Firm Automations', 360, 168);
+
+      // Subtitle
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '500 20px "Plus Jakarta Sans"';
+      ctx.fillText('Autonomous C-Suite Placement & Retained Mandate Intelligence', 360, 218);
+
+      // Metric Badges on bottom
+      drawPill(ctx, 360, 260, '⚡ 3x Placement Velocity', '#10B981');
+      drawPill(ctx, 580, 260, '📊 Live Board Telemetry', '#38BDF8');
+      drawPill(ctx, 790, 260, '🤖 10-Min AI Follow-Ups', '#A855F7');
+      ctx.restore();
+
+      // Avantty Logo Emblem on Right Side
+      ctx.save();
+      // White Circular Badge for logo
+      ctx.beginPath();
+      ctx.arc(w - 220, h / 2, 110, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetY = 6;
+      ctx.fill();
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.restore();
+
+      drawAvanttyIcon(ctx, w - 220, h / 2 + 5, 95, '#0B132B');
+    }
+
+    function drawPill(ctx, x, y, text, color) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 1;
+      roundRect(ctx, x, y, 195, 36, 18);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#E2E8F0';
+      ctx.font = '600 13px "Plus Jakarta Sans"';
+      ctx.fillText(text, x + 14, y + 23);
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function downloadCanvas(canvasId, filename) {
+      const canvas = document.getElementById(canvasId);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+    }
+
+    function downloadLogoSVG() {
+      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <circle cx="400" cy="400" r="360" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="12" />
+  <path d="M400,245 L538,545 L472,545 L400,380 L328,545 L262,545 Z" fill="#0B132B"/>
+  <polygon points="400,416 448,545 352,545" fill="#0B132B"/>
+</svg>`;
+      const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'avantty-logo.svg';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadBannerSVG() {
+      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1584 396" width="1584" height="396">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070B14"/>
+      <stop offset="50%" stop-color="#0B1325"/>
+      <stop offset="100%" stop-color="#050811"/>
+    </linearGradient>
+  </defs>
+  <rect width="1584" height="396" fill="url(#bg)"/>
+  <rect x="360" y="68" width="165" height="34" rx="17" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.35)"/>
+  <text x="376" y="90" fill="#10B981" font-family="Plus Jakarta Sans, sans-serif" font-weight="700" font-size="13">AVANTTY PLATFORM</text>
+  <text x="360" y="168" fill="#FFFFFF" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="48">Executive Search Firm Automations</text>
+  <text x="360" y="218" fill="#94A3B8" font-family="Plus Jakarta Sans, sans-serif" font-weight="500" font-size="20">Autonomous C-Suite Placement &amp; Retained Mandate Intelligence</text>
+  <circle cx="1364" cy="198" r="110" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="4"/>
+  <path d="M1364,146 L1408,241 L1387,241 L1364,189 L1341,241 L1320,241 Z" fill="#0B132B"/>
+  <polygon points="1364,200 1379,241 1349,241" fill="#0B132B"/>
+</svg>`;
+      const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'avantty-linkedin-banner.svg';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      document.fonts.ready.then(() => {
+        drawLogo();
+        drawBanner();
+      });
+    });
+  </script>
+</body>
+</html>
