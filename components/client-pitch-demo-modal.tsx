@@ -127,7 +127,7 @@ export function ClientPitchDemoModal() {
   const [formData, setFormData] = useState<WhiteLabelConfig>(whiteLabelConfig);
   const [copied, setCopied] = useState(false);
   const [appliedNotification, setAppliedNotification] = useState(false);
-  const [linkMode, setLinkMode] = useState<"subdomain" | "query">("subdomain");
+  const [linkMode, setLinkMode] = useState<"subdomain" | "query">("query");
   const [customDomain, setCustomDomain] = useState<string>(() => {
     if (typeof window !== "undefined" && window.location.origin !== "null") {
       return window.location.origin;

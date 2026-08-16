@@ -259,24 +259,13 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
     isClientView: isClient
   };
 
-  // Automatically clean and scrub the browser address bar immediately
-  // So the user and client ONLY see: https://demodashboard.avanttyops.com/ or the clean subdomain
-  try {
-    if (window.location.search) {
-      const cleanUrl = window.location.pathname || "/";
-      window.history.replaceState({}, document.title, cleanUrl);
-    }
-  } catch (e) {
-    // Ignore in non-browser environments
-  }
-
   return config;
 }
 
 export function generateWhiteLabelUrl(
   config: WhiteLabelConfig, 
   customBaseUrl?: string,
-  mode: "subdomain" | "query" = "subdomain"
+  mode: "subdomain" | "query" = "query"
 ): string {
   if (typeof window === "undefined") return "";
   
@@ -287,21 +276,16 @@ export function generateWhiteLabelUrl(
     return `https://demodashboard-${companySlug}.avanttyops.com`;
   }
   
-  let base = customBaseUrl?.trim() || `${window.location.origin}${window.location.pathname}`;
-  if (base.endsWith("/")) base = base.slice(0, -1);
-  if (!base.startsWith("http://") && !base.startsWith("https://")) {
-    base = `https://${base}`;
-  }
-  
+  const base = "https://demodashboard.avanttyops.com";
   const params = new URLSearchParams();
-  params.set("c", config.companyName || "Avantty");
-  if (config.contactName && config.contactName !== "Naim Ramos" && config.contactName !== "Managing Partner") {
-    params.set("p", config.contactName);
+  params.set("company", config.companyName || "Avantty");
+  if (config.contactName) {
+    params.set("contact", config.contactName);
   }
   if (config.themeColor && config.themeColor !== "emerald") {
-    params.set("clr", config.themeColor);
+    params.set("color", config.themeColor);
   }
-  params.set("cl", "1");
+  params.set("client", "true");
   
   return `${base}/?${params.toString()}`;
 }
