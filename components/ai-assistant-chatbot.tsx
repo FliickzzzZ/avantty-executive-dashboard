@@ -279,7 +279,56 @@ Direct answers to your questions:
   } => {
     const qLower = userQuery.toLowerCase().trim();
 
-    // 0. CEO & Leadership Query
+    // Check language of incoming query
+    const isSpanish = /[áéíóúñ¿¡]|\b(hola|que|qué|quién|quien|como|cómo|tengo|tienes|cuáles|cuales|semana|lunes|martes|miercoles|miércoles|jueves|viernes|hoy|mañana|manana|reuniones|entrevistas|gracias|dime|candidatos|perfiles|plantilla|algoritmo|capacidad|ponderado|porque|por qué|empresa|bueno|buenisimo|sirve)\b/i.test(userQuery);
+
+    // 0. VALUE PROPOSITION & PITCH: "Why will this launch our company?", "Why this dashboard?", "Good for my company"
+    const isValuePropOrPitchQuery =
+      qLower.includes("why this will launch") ||
+      qLower.includes("launch our company") ||
+      qLower.includes("launch my company") ||
+      qLower.includes("why will this") ||
+      qLower.includes("why this dashboard") ||
+      qLower.includes("good for my company") ||
+      qLower.includes("good for our company") ||
+      qLower.includes("why should we use") ||
+      qLower.includes("why should we choose") ||
+      qLower.includes("why choose") ||
+      qLower.includes("why use") ||
+      qLower.includes("what is the roi") ||
+      qLower.includes("roi") ||
+      qLower.includes("por que este dashboard") ||
+      qLower.includes("porque este dashboard") ||
+      qLower.includes("buenisimo para mi empresa") ||
+      qLower.includes("bueno para mi empresa") ||
+      qLower.includes("para que sirve") ||
+      qLower.includes("how will this help") ||
+      qLower.includes("value proposition") ||
+      qLower.includes("benefit") ||
+      qLower.includes("benefits") ||
+      qLower.includes("advantage");
+
+    if (isValuePropOrPitchQuery) {
+      if (isSpanish) {
+        return {
+          responseText: `Hola **${ceoFirstName}**, aquí tienes exactamente por qué este dashboard impulsará y escalará a **${companyName}** de forma exponencial:\n\n1. ⚡ **Velocidad de Cierre 3x Superior**: Reduce el ciclo tradicional de 65 días a solo **18–21 días** mediante Board Readiness Scores (0–100) y filtros Booleanos precalibrados.\n2. 📊 **Gobernanza y Transparencia Total**: Tu equipo y clientes tienen visibilidad en tiempo real del pipeline ponderado, rondas con el Consejo y cobro de honorarios por hitos sin perder tiempo en reuniones manuales.\n3. 🤖 **Apalancamiento Operativo Autónomo**: Los bots de IA transcriben entrevistas y despachan correos de seguimiento personalizados en 10 minutos, permitiendo que cada socio gestione más de 3.5 mandatos activos con máxima excelencia.\n\n*¿Te gustaría adentrarte en nuestro pipeline de candidatos C-Suite o prefieres revisar la agenda de entrevistas en vivo?*`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "🚀 Explorar Pipeline de Candidatos C-Suite"
+          }
+        };
+      } else {
+        return {
+          responseText: `Hello **${ceoFirstName}**, here is exactly how this dashboard will launch and scale **${companyName}**:\n\n1. ⚡ **3x Placement Velocity**: Compresses standard 65-day retained search cycles down to **18–21 days** using pre-calibrated Board Readiness Scores (0–100) and instant shortlist matching.\n2. 📊 **Institutional Governance & Transparency**: Replaces manual status reports with live executive visibility into pipeline valuation, active retainer loads, and risk telemetry.\n3. 🤖 **Autonomous AI Leverage**: Meeting bots capture interview intelligence and dispatch automated follow-ups in 10 minutes, allowing each partner to scale capacity to 3.5+ active mandates with zero delivery friction.\n\n*Would you like to dive into our live C-Suite talent pipeline or explore the active interview schedule?*`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "🚀 Explore Live C-Suite Pipeline"
+          }
+        };
+      }
+    }
+
+    // 1. CEO & Leadership Query
     const isCEOQuery =
       qLower.includes("ceo") ||
       qLower.includes("chief executive") ||
@@ -295,12 +344,18 @@ Direct answers to your questions:
       qLower.includes("director general");
 
     if (isCEOQuery) {
-      return {
-        responseText: `Hello **${ceoFirstName}**, the **CEO of ${companyName}** is **${ceoFullName}** (${ceoEmail}). Leading all executive search practice operations, partner allocations, and firm governance.`
-      };
+      if (isSpanish) {
+        return {
+          responseText: `Hola **${ceoFirstName}**, el **CEO de ${companyName}** es **${ceoFullName}** (${ceoEmail}). Lidera las operaciones de búsqueda de ejecutivos, asignación de socios y gobernanza de la firma.`
+        };
+      } else {
+        return {
+          responseText: `Hello **${ceoFirstName}**, the **CEO of ${companyName}** is **${ceoFullName}** (${ceoEmail}). Leading all executive search practice operations, partner allocations, and firm governance.`
+        };
+      }
     }
 
-    // 1. Executive Algorithms: Weighted Pipeline Value
+    // 2. Executive Algorithms: Weighted Pipeline Value
     if (
       qLower.includes("weighted pipeline") ||
       qLower.includes("pipeline value") ||
@@ -310,13 +365,23 @@ Direct answers to your questions:
       qLower.includes("how is pipeline calculated") ||
       (qLower.includes("pipeline") && (qLower.includes("calcul") || qLower.includes("formula") || qLower.includes("how")))
     ) {
-      return {
-        responseText: `**${companyName} Weighted Pipeline Calculation:**\n\n$$\\text{Pipeline Value} = (\\text{Target Salary} \\times 30\\% \\text{ Fee}) \\times \\text{Stage Probability}$$\n\n• **Open Mandate (Sourcing)**: **20%**\n• **Shortlist Presented**: **50%**\n• **Board Interviews**: **80%**\n• **Offer Closed / Placed**: **100% Placed Revenue** (Transfers to collected billings and releases partner retainer).`,
-        navigationTarget: {
-          page: "search-candidates",
-          label: "View Pipeline in Search Candidates"
-        }
-      };
+      if (isSpanish) {
+        return {
+          responseText: `**Cálculo del Pipeline Ponderado en ${companyName}:**\n\n$$\\text{Pipeline Value} = (\\text{Salario Target} \\times 30\\% \\text{ Fee}) \\times \\text{Probabilidad}$$\n\n• **Open Mandate (Sourcing)**: **20%**\n• **Shortlist al Cliente**: **50%**\n• **Entrevistas de Consejo (Board)**: **80%**\n• **Offer Closed / Placed**: **100% Facturado** (Pasa a cobrado y libera el retainer activo).`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "Ver Pipeline en Search Candidates"
+          }
+        };
+      } else {
+        return {
+          responseText: `**${companyName} Weighted Pipeline Calculation:**\n\n$$\\text{Pipeline Value} = (\\text{Target Salary} \\times 30\\% \\text{ Fee}) \\times \\text{Stage Probability}$$\n\n• **Open Mandate (Sourcing)**: **20%**\n• **Shortlist Presented**: **50%**\n• **Board Interviews**: **80%**\n• **Offer Closed / Placed**: **100% Placed Revenue** (Transfers to collected billings and releases partner retainer).`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "View Pipeline in Search Candidates"
+          }
+        };
+      }
     }
 
     // 2. Executive Algorithms: Capacity Load & Partners
