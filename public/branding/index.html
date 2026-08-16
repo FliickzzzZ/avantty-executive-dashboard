@@ -177,15 +177,18 @@
       <div class="card">
         <div class="card-title">
           <span>Banner de Portada</span>
-          <span style="font-size: 11px; color: #10B981; font-family: monospace;">1584 × 396 px (LinkedIn Oficial)</span>
+          <div style="display: flex; gap: 6px;">
+            <button onclick="setBannerTheme('white')" style="background: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">Fondo Blanco</button>
+            <button onclick="setBannerTheme('dark')" style="background: #0F172A; color: #FFFFFF; border: 1px solid #334155; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">Fondo Oscuro</button>
+          </div>
         </div>
-        <p class="card-desc">Banner panorámico con tipografía premium, logo 'A' y la frase <strong>Executive Search Firm Automations</strong>.</p>
-        <div class="preview-box">
-          <canvas id="bannerCanvas" width="1584" height="396" style="width: 100%;"></canvas>
+        <p class="card-desc">Banner minimalista 100% limpio: Fondo blanco, tipografía negra en negrita y emblema 'A' de Avantty.</p>
+        <div class="preview-box" style="background: #E2E8F0; padding: 12px;">
+          <canvas id="bannerCanvas" width="1584" height="396" style="width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.08);"></canvas>
         </div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="downloadCanvas('bannerCanvas', 'avantty-linkedin-banner-1584x396.png')">
-            Descargar Banner Oficial (PNG 1584x396)
+          <button class="btn btn-primary" onclick="downloadCanvas('bannerCanvas', 'avantty-linkedin-banner-white-1584x396.png')">
+            Descargar Banner Blanco (PNG 1584x396)
           </button>
           <button class="btn btn-secondary" onclick="downloadBannerSVG()">
             Descargar SVG
@@ -272,6 +275,14 @@
       ctx.restore();
     }
 
+    // Theme state for banner
+    let currentBannerTheme = 'white'; // 'white' or 'dark'
+
+    function setBannerTheme(theme) {
+      currentBannerTheme = theme;
+      drawBanner();
+    }
+
     // Draw Banner
     function drawBanner() {
       const canvas = document.getElementById('bannerCanvas');
@@ -279,115 +290,58 @@
       const w = 1584;
       const h = 396;
 
-      // Background Gradient
-      const grad = ctx.createLinearGradient(0, 0, w, h);
-      grad.addColorStop(0, '#070B14');
-      grad.addColorStop(0.5, '#0B1325');
-      grad.addColorStop(1, '#050811');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
+      ctx.clearRect(0, 0, w, h);
 
-      // Subtle modern grid pattern
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
-      ctx.lineWidth = 1;
-      const gridSize = 44;
-      for (let x = 0; x < w; x += gridSize) {
+      if (currentBannerTheme === 'white') {
+        // PURE MINIMAL WHITE THEME
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, w, h);
+
+        // Subtle bottom border
+        ctx.strokeStyle = '#F1F5F9';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, w, h);
+
+        // Main Title: Executive Search Firm Automations (Black / Obsidian)
+        ctx.save();
+        ctx.fillStyle = '#0B132B';
+        ctx.font = '800 52px "Plus Jakarta Sans", sans-serif';
+        ctx.letterSpacing = '-0.03em';
+        ctx.fillText('Executive Search Firm Automations', 360, 215);
+        ctx.restore();
+
+        // Avantty Logo Emblem on Right Side (Black / Obsidian)
+        drawAvanttyIcon(ctx, w - 220, h / 2 + 5, 120, '#0B132B');
+      } else {
+        // OBSIDIAN DARK THEME
+        const grad = ctx.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, '#070B14');
+        grad.addColorStop(0.5, '#0B1325');
+        grad.addColorStop(1, '#050811');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Main Title: Executive Search Firm Automations (White)
+        ctx.save();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '800 52px "Plus Jakarta Sans", sans-serif';
+        ctx.letterSpacing = '-0.03em';
+        ctx.fillText('Executive Search Firm Automations', 360, 215);
+        ctx.restore();
+
+        // White Circular Badge for logo
+        ctx.save();
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
+        ctx.arc(w - 220, h / 2, 85, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 4;
+        ctx.fill();
+        ctx.restore();
+
+        drawAvanttyIcon(ctx, w - 220, h / 2 + 5, 85, '#0B132B');
       }
-      for (let y = 0; y < h; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-
-      // High-tech subtle emerald glow on top right
-      const glow = ctx.createRadialGradient(w - 250, h / 2, 50, w - 250, h / 2, 400);
-      glow.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
-      glow.addColorStop(1, 'rgba(16, 185, 129, 0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, w, h);
-
-      // Left Brand Tag Badge
-      ctx.save();
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.35)';
-      ctx.lineWidth = 1.5;
-      roundRect(ctx, 360, 68, 165, 34, 17);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#10B981';
-      ctx.font = '700 13px "Plus Jakarta Sans"';
-      ctx.fillText('AVANTTY PLATFORM', 376, 90);
-      ctx.restore();
-
-      // Main Phrase: Executive Search Firm Automations
-      ctx.save();
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '800 48px "Plus Jakarta Sans"';
-      ctx.letterSpacing = '-0.02em';
-      ctx.fillText('Executive Search Firm Automations', 360, 168);
-
-      // Subtitle
-      ctx.fillStyle = '#94A3B8';
-      ctx.font = '500 20px "Plus Jakarta Sans"';
-      ctx.fillText('Autonomous C-Suite Placement & Retained Mandate Intelligence', 360, 218);
-
-      // Metric Badges on bottom
-      drawPill(ctx, 360, 260, '⚡ 3x Placement Velocity', '#10B981');
-      drawPill(ctx, 580, 260, '📊 Live Board Telemetry', '#38BDF8');
-      drawPill(ctx, 790, 260, '🤖 10-Min AI Follow-Ups', '#A855F7');
-      ctx.restore();
-
-      // Avantty Logo Emblem on Right Side
-      ctx.save();
-      // White Circular Badge for logo
-      ctx.beginPath();
-      ctx.arc(w - 220, h / 2, 110, 0, Math.PI * 2);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-      ctx.shadowBlur = 30;
-      ctx.shadowOffsetY = 6;
-      ctx.fill();
-      ctx.strokeStyle = '#E2E8F0';
-      ctx.lineWidth = 4;
-      ctx.stroke();
-      ctx.restore();
-
-      drawAvanttyIcon(ctx, w - 220, h / 2 + 5, 95, '#0B132B');
-    }
-
-    function drawPill(ctx, x, y, text, color) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.lineWidth = 1;
-      roundRect(ctx, x, y, 195, 36, 18);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#E2E8F0';
-      ctx.font = '600 13px "Plus Jakarta Sans"';
-      ctx.fillText(text, x + 14, y + 23);
-      ctx.restore();
-    }
-
-    function roundRect(ctx, x, y, width, height, radius) {
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + width - radius, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-      ctx.lineTo(x + width, y + height - radius);
-      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-      ctx.lineTo(x + radius, y + height);
-      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
     }
 
     function downloadCanvas(canvasId, filename) {
@@ -414,28 +368,38 @@
     }
 
     function downloadBannerSVG() {
-      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1584 396" width="1584" height="396">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#070B14"/>
-      <stop offset="50%" stop-color="#0B1325"/>
-      <stop offset="100%" stop-color="#050811"/>
-    </linearGradient>
-  </defs>
-  <rect width="1584" height="396" fill="url(#bg)"/>
-  <rect x="360" y="68" width="165" height="34" rx="17" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.35)"/>
-  <text x="376" y="90" fill="#10B981" font-family="Plus Jakarta Sans, sans-serif" font-weight="700" font-size="13">AVANTTY PLATFORM</text>
-  <text x="360" y="168" fill="#FFFFFF" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="48">Executive Search Firm Automations</text>
-  <text x="360" y="218" fill="#94A3B8" font-family="Plus Jakarta Sans, sans-serif" font-weight="500" font-size="20">Autonomous C-Suite Placement &amp; Retained Mandate Intelligence</text>
-  <circle cx="1364" cy="198" r="110" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="4"/>
-  <path d="M1364,146 L1408,241 L1387,241 L1364,189 L1341,241 L1320,241 Z" fill="#0B132B"/>
-  <polygon points="1364,200 1379,241 1349,241" fill="#0B132B"/>
+      const isWhite = currentBannerTheme === 'white';
+      const bg = isWhite ? '#FFFFFF' : '#0B1325';
+      const textColor = isWhite ? '#0B132B' : '#FFFFFF';
+      const logoColor = '#0B132B';
+
+      let svgContent = '';
+      if (isWhite) {
+        svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1584 396" width="1584" height="396">
+  <rect width="1584" height="396" fill="#FFFFFF"/>
+  <text x="360" y="215" fill="#0B132B" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="52" letter-spacing="-0.03em">Executive Search Firm Automations</text>
+  <g transform="translate(1364, 203)">
+    <path d="M0,-66 L55,54 L29,54 L0,-12 L-29,54 L-55,54 Z" fill="#0B132B"/>
+    <polygon points="0,2 19,54 -19,54" fill="#0B132B"/>
+  </g>
 </svg>`;
+      } else {
+        svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1584 396" width="1584" height="396">
+  <rect width="1584" height="396" fill="#070B14"/>
+  <text x="360" y="215" fill="#FFFFFF" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="52" letter-spacing="-0.03em">Executive Search Firm Automations</text>
+  <circle cx="1364" cy="198" r="85" fill="#FFFFFF"/>
+  <g transform="translate(1364, 203)">
+    <path d="M0,-47 L39,38 L20,38 L0,-9 L-20,38 L-39,38 Z" fill="#0B132B"/>
+    <polygon points="0,1 14,38 -14,38" fill="#0B132B"/>
+  </g>
+</svg>`;
+      }
+
       const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'avantty-linkedin-banner.svg';
+      link.download = `avantty-linkedin-banner-${currentBannerTheme}.svg`;
       link.click();
       URL.revokeObjectURL(url);
     }
