@@ -659,22 +659,135 @@ Direct answers to your questions:
       };
     }
 
-    // 11. Casual Greetings
-    const isGreeting = /^(hey|hello|hi|howdy|yo|sup|good morning|good afternoon|good evening|hola|buenas|buenos dias|qué tal|que tal)\b/i.test(qLower);
-    if (isGreeting) {
-      return {
-        responseText: `Hello **${ceoFirstName}**! Everything operational at **${companyName}**. What metric, interview, or candidate search do you need?`
-      };
+    // 11. Clarification & Follow-up questions: "what?", "what do you mean?", "i don't understand", "cómo?", "no entiendo"
+    const isClarificationOrConfusionQuery =
+      qLower === "what" ||
+      qLower === "what?" ||
+      qLower === "what ? " ||
+      qLower.startsWith("what do you mean") ||
+      qLower.includes("i don't get it") ||
+      qLower.includes("i dont get it") ||
+      qLower.includes("i don't understand") ||
+      qLower.includes("explain simply") ||
+      qLower.includes("in plain english") ||
+      qLower.includes("huh") ||
+      qLower.includes("sorry?") ||
+      qLower.includes("can you clarify") ||
+      qLower.includes("tell me more") ||
+      qLower === "como" ||
+      qLower === "cómo" ||
+      qLower === "como?" ||
+      qLower === "cómo?" ||
+      qLower === "que?" ||
+      qLower === "qué?" ||
+      qLower.includes("no entiendo") ||
+      qLower.includes("a que te refieres") ||
+      qLower.includes("a qué te refieres") ||
+      qLower.includes("explica");
+
+    if (isClarificationOrConfusionQuery) {
+      if (isSpanish) {
+        return {
+          responseText: `En palabras sencillas, **${ceoFirstName}**:\n\nEl headhunting ejecutivo tradicional es lento, manual y lleno de horas perdidas en notas y hojas de cálculo.\n\nEste dashboard funciona como el centro de mando autónomo de **${companyName}**: puntúa candidatos con métricas del Consejo, transcribe entrevistas al instante y calcula tus cobros de honorarios en tiempo real sin trabajo manual.\n\n¿Tiene sentido? ¿O mejor nos lanzamos a ver el dashboard paso a paso para que veas en vivo cómo transforma las operaciones de tu empresa?`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "🚀 Ver el Dashboard Paso a Paso"
+          }
+        };
+      } else {
+        return {
+          responseText: `In plain words, **${ceoFirstName}**:\n\nTraditional executive search is slow, manual, and bogged down by lost time on spreadsheets and admin work.\n\nThis dashboard operates as **${companyName}**'s autonomous command center: it pre-scores C-Suite candidates with Board metrics, transcribes interviews with AI bots, and forecasts placement billings in real time with zero paperwork.\n\nMakes sense? Or would you rather dive into the dashboard step-by-step so you can see firsthand how it transforms your search operations?`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "🚀 Walk Me Through The Dashboard Step-by-Step"
+          }
+        };
+      }
     }
 
-    // 12. Direct Default
-    return {
-      responseText: `Hello **${ceoFirstName}**, let me know what you need for **${companyName}**: pipeline metrics, interview schedules, or candidate search priorities.`,
-      navigationTarget: {
-        page: "dashboard",
-        label: "View Operations Dashboard"
+    // 12. Affirmative responses / Tour request: "yes", "sure", "show me", "let's do it", "ok", "vamos", "adelante"
+    const isAffirmativeOrTourQuery =
+      qLower === "yes" ||
+      qLower === "yes please" ||
+      qLower === "sure" ||
+      qLower === "ok" ||
+      qLower === "okay" ||
+      qLower === "let's do it" ||
+      qLower === "lets do it" ||
+      qLower === "show me" ||
+      qLower.includes("walk me through") ||
+      qLower.includes("start tour") ||
+      qLower.includes("show me the dashboard") ||
+      qLower === "si" ||
+      qLower === "sí" ||
+      qLower === "vamos" ||
+      qLower === "dale" ||
+      qLower === "adelante" ||
+      qLower === "claro" ||
+      qLower.includes("enseñame") ||
+      qLower.includes("muestrame") ||
+      qLower.includes("guíame");
+
+    if (isAffirmativeOrTourQuery) {
+      if (isSpanish) {
+        return {
+          responseText: `¡Perfecto **${ceoFirstName}**! Vamos a recorrer las 3 áreas clave de **${companyName}**:\n\n1. 👥 **Búsqueda de Candidatos**: Perfiles C-Suite con puntuaciones de preparación para el Consejo (0-100).\n2. 📅 **Entrevistas y Agenda**: Grabación automática y correos de seguimiento en 10 minutos.\n3. 📊 **Métricas de Operaciones**: Pipeline ponderado ($173k) y capacidad activa por socio.\n\n¿Por cuál prefieres empezar?`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "1️⃣ Explorar Candidatos C-Suite"
+          }
+        };
+      } else {
+        return {
+          responseText: `Perfect, **${ceoFirstName}**! Let's explore the 3 core pillars of **${companyName}**:\n\n1. 👥 **Search Candidates**: Live C-Suite talent specs with Board Readiness scores (0-100).\n2. 📅 **Meetings & Schedule**: AI interview recording and automated 10-minute follow-ups.\n3. 📊 **Operations Command**: Weighted pipeline ($173k) and real-time partner capacity loads.\n\nWhere would you like to start?`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "1️⃣ Explore C-Suite Talent Pool"
+          }
+        };
       }
-    };
+    }
+
+    // 13. Casual Greetings
+    const isGreeting = /^(hey|hello|hi|howdy|yo|sup|good morning|good afternoon|good evening|hola|buenas|buenos dias|qué tal|que tal)\b/i.test(qLower);
+    if (isGreeting) {
+      if (isSpanish) {
+        return {
+          responseText: `¡Hola **${ceoFirstName}**! Todo el sistema está operativo en **${companyName}**. ¿Quieres que te muestre los candidatos C-Suite activos o el desglose de ingresos del pipeline?`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "Ver Candidatos C-Suite"
+          }
+        };
+      } else {
+        return {
+          responseText: `Hello **${ceoFirstName}**! Everything is fully operational at **${companyName}**. Would you like to inspect active C-Suite candidates or review live pipeline metrics?`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "Inspect C-Suite Candidates"
+          }
+        };
+      }
+    }
+
+    // 14. Intelligent Conversational Default
+    if (isSpanish) {
+      return {
+        responseText: `Hola **${ceoFirstName}**, como asistente de operaciones de **${companyName}**, puedo guiarte por el pipeline de candidatos, calcular honorarios de mandatos o revisar la agenda de entrevistas.\n\n*¿Prefieres que exploremos el dashboard paso a paso o tienes alguna duda concreta sobre las métricas?*`,
+        navigationTarget: {
+          page: "search-candidates",
+          label: "🚀 Explorar el Dashboard Paso a Paso"
+        }
+      };
+    } else {
+      return {
+        responseText: `Hello **${ceoFirstName}**, as **${companyName}**'s operations assistant, I can walk you through our C-Suite talent pipeline, calculate weighted retainer fees, or review the weekly interview schedule.\n\n*Would you like to explore the dashboard step-by-step, or do you have a specific question about your operations?*`,
+        navigationTarget: {
+          page: "search-candidates",
+          label: "🚀 Walk Me Through The Dashboard Step-by-Step"
+        }
+      };
+    }
   };
 
   const handleSendMessage = (e?: React.FormEvent) => {
