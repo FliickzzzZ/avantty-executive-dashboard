@@ -282,8 +282,52 @@ Direct answers to your questions:
     // Check language of incoming query
     const isSpanish = /[áéíóúñ¿¡]|\b(hola|que|qué|quién|quien|como|cómo|tengo|tienes|cuáles|cuales|semana|lunes|martes|miercoles|miércoles|jueves|viernes|hoy|mañana|manana|reuniones|entrevistas|gracias|dime|candidatos|perfiles|plantilla|algoritmo|capacidad|ponderado|porque|por qué|empresa|bueno|buenisimo|sirve)\b/i.test(userQuery);
 
-    // 0. VALUE PROPOSITION & PITCH: "Why will this launch our company?", "Why this dashboard?", "Good for my company"
+    // 0. MONEY, REVENUE & PROFIT: "why do your help let me make more money?", "how does this make money?"
+    const isMoneyOrRevenueQuery =
+      qLower.includes("make more money") ||
+      qLower.includes("make money") ||
+      qLower.includes("more money") ||
+      qLower.includes("earn more") ||
+      qLower.includes("generate revenue") ||
+      qLower.includes("increase revenue") ||
+      qLower.includes("more profit") ||
+      qLower.includes("higher margin") ||
+      qLower.includes("bottom line") ||
+      qLower.includes("financial return") ||
+      qLower.includes("ganar dinero") ||
+      qLower.includes("mas dinero") ||
+      qLower.includes("más dinero") ||
+      qLower.includes("rentabilidad") ||
+      qLower.includes("facturacion") ||
+      qLower.includes("facturación") ||
+      qLower.includes("ingresos");
+
+    if (isMoneyOrRevenueQuery) {
+      if (isSpanish) {
+        return {
+          responseText: `Hola **${ceoFirstName}**, así es exactamente cómo este dashboard genera más dinero y rentabilidad directa para **${companyName}**:\n\n💰 **1. Triplica el Volumen de Cierres (+$180k–$300k/trimestre)**:\nAl reducir los mandatos de 65 días a solo **18–21 días**, cada socio puede cerrar el triple de procesos en el mismo tiempo sin contratar más personal.\n\n🛡️ **2. Cero Fugas de Honorarios (Protección de Retainers)**:\nEl Índice de Urgencia detecta fricciones a tiempo, evitando que los candidatos se caigan y protegiendo tus **honorarios de $35,000 a $85,000 por colocación**.\n\n⚡ **3. 300% Más Capacidad por Socio**:\nLa automatización de notas y correos en 10 minutos ahorra más de 15 horas semanales por consultor, permitiendo a 2 socios gestionar **7 mandatos activos ($250k+ en pipeline)**.\n\n*¿Te gustaría inspeccionar el desglose de nuestro pipeline de $173k o revisar los perfiles de candidatos listos para Consejo?*`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "🚀 Ver Desglose de Pipeline y Candidatos"
+          }
+        };
+      } else {
+        return {
+          responseText: `Hello **${ceoFirstName}**, here is exactly how this dashboard directly generates more revenue and profit for **${companyName}**:\n\n💰 **1. 3x Retainer Throughput (+$180k–$300k/quarter)**:\nBy compressing executive search cycles from 65 days down to **18–21 days**, each partner completes 3 retained searches in the time it normally takes to do 1 without extra overhead.\n\n🛡️ **2. Zero Fee Slippage & Retainer Protection**:\nThe live Urgency Index detects candidate stall early, preventing attrition and safeguarding your **$35,000–$85,000 placement fees**.\n\n⚡ **3. 300% Partner Capacity Expansion**:\nAutomated debriefs and 10-minute follow-ups save 15+ hours/week per consultant, allowing 2 partners to effortlessly manage **7 active retainers ($250k+ pipeline)**.\n\n*Would you like to inspect our live $173k pipeline breakdown or review active candidate Board scores?*`,
+          navigationTarget: {
+            page: "search-candidates",
+            label: "🚀 Inspect Live Pipeline Breakdown"
+          }
+        };
+      }
+    }
+
+    // 1. VALUE PROPOSITION & PITCH: "Why would this dashboard help my company?", "Why will this launch our company?"
     const isValuePropOrPitchQuery =
+      qLower.includes("why would this dashboard help") ||
+      qLower.includes("why would this help") ||
+      qLower.includes("how will this dashboard help") ||
+      qLower.includes("how does this help") ||
       qLower.includes("why this will launch") ||
       qLower.includes("launch our company") ||
       qLower.includes("launch my company") ||
@@ -301,6 +345,7 @@ Direct answers to your questions:
       qLower.includes("porque este dashboard") ||
       qLower.includes("buenisimo para mi empresa") ||
       qLower.includes("bueno para mi empresa") ||
+      qLower.includes("como ayuda a mi empresa") ||
       qLower.includes("para que sirve") ||
       qLower.includes("how will this help") ||
       qLower.includes("value proposition") ||
@@ -328,7 +373,7 @@ Direct answers to your questions:
       }
     }
 
-    // 1. CEO & Leadership Query
+    // 2. CEO & Leadership Query
     const isCEOQuery =
       qLower.includes("ceo") ||
       qLower.includes("chief executive") ||
@@ -355,7 +400,7 @@ Direct answers to your questions:
       }
     }
 
-    // 2. Executive Algorithms: Weighted Pipeline Value
+    // 3. Executive Algorithms: Weighted Pipeline Value
     if (
       qLower.includes("weighted pipeline") ||
       qLower.includes("pipeline value") ||
@@ -384,7 +429,7 @@ Direct answers to your questions:
       }
     }
 
-    // 2. Executive Algorithms: Capacity Load & Partners
+    // 4. Executive Algorithms: Capacity Load & Partners
     if (
       qLower.includes("capacity load") ||
       qLower.includes("carga de capacidad") ||
@@ -402,7 +447,7 @@ Direct answers to your questions:
       };
     }
 
-    // 3. Executive Algorithms: Urgency Index
+    // 5. Executive Algorithms: Urgency Index
     if (
       qLower.includes("urgency index") ||
       qLower.includes("indice de urgencia") ||
@@ -420,20 +465,22 @@ Direct answers to your questions:
       };
     }
 
-    // 4. Self-Presentation / Functions & Capabilities Query
+    // 6. Self-Presentation / Functions & Capabilities Query (Only triggered for exact help/menu queries)
     const isHelpOrCapabilitiesQuery =
+      qLower === "help" ||
+      qLower.startsWith("help ") ||
+      qLower === "ayuda" ||
+      qLower.startsWith("ayuda ") ||
+      qLower.includes("what can you do") ||
+      qLower.includes("who are you") ||
       qLower.includes("que puedes hacer") ||
       qLower.includes("qué puedes hacer") ||
       qLower.includes("cuales son tus funciones") ||
       qLower.includes("cuáles son tus funciones") ||
       qLower.includes("quien eres") ||
       qLower.includes("quién eres") ||
-      qLower.includes("what can you do") ||
-      qLower.includes("who are you") ||
-      qLower.includes("help") ||
-      qLower.includes("ayuda") ||
-      qLower.includes("funciones") ||
-      qLower.includes("capabilities");
+      qLower.includes("capabilities") ||
+      qLower.includes("features");
 
     if (isHelpOrCapabilitiesQuery) {
       return {
