@@ -67,9 +67,9 @@ export function AppSearch({ onNavigate }: AppSearchProps = {}) {
             rawId: spec.id,
             type: "Candidate Spec",
             title: `${spec.roleTitle} — ${spec.company}`,
-            subtitle: `${spec.status === "Finded" ? "FINDED" : "SEARCHING"} • ${spec.department || "Executive"} • ${spec.locationWorkspace}`,
+            subtitle: `${spec.status === "Placed" ? "PLACED" : "SEARCHING"} • ${spec.department || "Executive"} • ${spec.locationWorkspace}`,
             detail: spec.coreChallenge || spec.trackRecord || spec.targetHuntingGrounds,
-            categoryTag: spec.status === "Finded" ? "Finded" : "Active Search",
+            categoryTag: spec.status === "Placed" ? "Placed" : "Active Search",
             targetPage: "search-candidates"
           });
         }

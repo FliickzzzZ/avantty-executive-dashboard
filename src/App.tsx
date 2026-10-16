@@ -173,7 +173,7 @@ function AppContent() {
             ) : activePage === "follow-ups" && allowedPages.includes("follow-ups") ? (
               <FollowUpsView currentRole={userRole} />
             ) : activePage === "logs" && allowedPages.includes("logs") ? (
-              <LogsView />
+              <LogsView currentRole={userRole} />
             ) : activePage === "dashboard" && allowedPages.includes("dashboard") ? (
               <Dashboard onNavigate={handleSelectPage} />
             ) : (

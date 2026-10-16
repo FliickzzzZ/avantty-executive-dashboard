@@ -59,28 +59,28 @@ export const STAGE_CONFIG: Record<
   { label: string; shortLabel: string; probability: number; phaseNumber: number; color: string }
 > = {
   sourcing: {
-    label: "Fase 1: Mandato Abierto (Sourcing / Longlist)",
+    label: "Phase 1: Open Mandate (Sourcing / Longlist)",
     shortLabel: "Longlist (20%)",
     probability: 0.20,
     phaseNumber: 1,
     color: "slate"
   },
   shortlist: {
-    label: "Fase 2: Shortlist Presentada al Cliente",
+    label: "Phase 2: Client Presentation (Shortlist)",
     shortLabel: "Shortlist (50%)",
     probability: 0.50,
     phaseNumber: 2,
-    color: "blue"
+    color: "emerald"
   },
   board: {
-    label: "Fase 3: Entrevistas Finales Consejo (Board Round)",
+    label: "Phase 3: Final Board Interviews (Board Round)",
     shortLabel: "Board (80%)",
     probability: 0.80,
     phaseNumber: 3,
-    color: "indigo"
+    color: "emerald"
   },
   placed: {
-    label: "Fase 4: Oferta Aceptada / Candidato Cerrado",
+    label: "Phase 4: Offer Accepted (Placed / Closed)",
     shortLabel: "Placed (100%)",
     probability: 1.00,
     phaseNumber: 4,
@@ -95,7 +95,7 @@ export interface CandidateSearchSpec {
   priority?: "Urgent" | "High" | "Medium";
   createdAt?: number; // timestamp in ms
 
-  status?: "Searching" | "Finded";
+  status?: "Searching" | "Placed";
   profileLogs?: ProfileLogEntry[];
 
   // Executive Search Algorithm Properties
@@ -739,7 +739,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
     const spec = candidateSpecs.find((s) => s.id === focusedSpecId);
     if (spec) {
       setSelectedSpec(spec);
-      setLedgerTab(spec.status === "Finded" ? "logs" : "active");
+      setLedgerTab(spec.status === "Placed" ? "logs" : "active");
       setIsLedgerModalOpen(true);
     }
 
@@ -747,14 +747,14 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
   }, [focusedSpecId, candidateSpecs, setFocusedSpecId]);
 
   // Calculate active and logs counts
-  const activeCount = useMemo(() => candidateSpecs.filter((s) => s.status !== "Finded").length, [candidateSpecs]);
-  const logsCount = useMemo(() => candidateSpecs.filter((s) => s.status === "Finded").length, [candidateSpecs]);
+  const activeCount = useMemo(() => candidateSpecs.filter((s) => s.status !== "Placed").length, [candidateSpecs]);
+  const logsCount = useMemo(() => candidateSpecs.filter((s) => s.status === "Placed").length, [candidateSpecs]);
 
   // Sidebar list for modal with high-speed filter
   const sidebarList = useMemo(() => {
     const base = candidateSpecs.filter((s) => {
-      if (ledgerTab === "active") return s.status !== "Finded";
-      return s.status === "Finded";
+      if (ledgerTab === "active") return s.status !== "Placed";
+      return s.status === "Placed";
     });
     if (!modalSidebarSearch.trim()) return base;
     const q = modalSidebarSearch.toLowerCase().trim();
@@ -766,24 +766,24 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
     );
   }, [candidateSpecs, ledgerTab, modalSidebarSearch]);
 
-  // Toggle candidate status between Searching and Finded with profile log entry
-  const handleToggleFinded = (specId: string, fromModal: boolean = false) => {
+  // Toggle candidate mandate status between Searching and Placed with profile log entry
+  const handleTogglePlaced = (specId: string, fromModal: boolean = false) => {
     const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     setCandidateSpecs((prevSpecs) =>
       prevSpecs.map((spec) => {
         if (spec.id !== specId) return spec;
 
-        const isCurrentlyFinded = spec.status === "Finded";
-        const newStatus: "Searching" | "Finded" = isCurrentlyFinded ? "Searching" : "Finded";
+        const isCurrentlyPlaced = spec.status === "Placed";
+        const newStatus: "Searching" | "Placed" = isCurrentlyPlaced ? "Searching" : "Placed";
 
         const newLog: ProfileLogEntry = {
           id: `log-${Date.now()}`,
           timestamp: timeStr,
-          action: isCurrentlyFinded ? "Status Reverted to Searching" : "Marked as Finded",
-          details: isCurrentlyFinded
-            ? "Action reverted: Candidate status restored to Searching."
-            : "Candidate marked as Finded (Sourced & Fulfilled).",
+          action: isCurrentlyPlaced ? "Status Reverted to Active Search" : "Mandate Marked as Placed",
+          details: isCurrentlyPlaced
+            ? "Action reverted: Mandate status restored to Active Search."
+            : "Mandate marked as Placed (Candidate Sourced & Fulfilled).",
           type: "status_change",
         };
 
@@ -791,16 +791,17 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
         const updatedSpec: CandidateSearchSpec = {
           ...spec,
           status: newStatus,
+          stage: isCurrentlyPlaced ? "sourcing" : "placed",
           profileLogs: updatedLogs,
         };
 
         addLog({
           category: "Candidate Spec",
-          action: isCurrentlyFinded
-            ? `Reverted Status to Searching: ${spec.code}`
-            : `Marked Candidate as Finded: ${spec.code}`,
-          details: `Candidate specification ${spec.code} (${spec.roleTitle} at ${spec.company}) status set to ${newStatus}.`,
-          level: isCurrentlyFinded ? "info" : "success",
+          action: isCurrentlyPlaced
+            ? `Reverted Status to Active Search: ${spec.code}`
+            : `Marked Mandate as Placed: ${spec.code}`,
+          details: `Executive search mandate ${spec.code} (${spec.roleTitle} at ${spec.company}) status set to ${newStatus}.`,
+          level: isCurrentlyPlaced ? "info" : "success",
           userRole: currentRole,
         });
 
@@ -809,19 +810,19 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
     );
 
     if (fromModal) {
-      // Auto-select next candidate spec in current tab so user can continuously spam revert
+      // Auto-select next candidate spec in current tab
       const remainingInTab = candidateSpecs.filter((s) => {
         if (ledgerTab === "logs") {
-          return s.status === "Finded" && s.id !== specId;
+          return s.status === "Placed" && s.id !== specId;
         }
-        return s.status !== "Finded" && s.id !== specId;
+        return s.status !== "Placed" && s.id !== specId;
       });
       setSelectedSpec(remainingInTab[0] || null);
     }
   };
 
   const handlePermanentDeleteSpec = (specId: string) => {
-    const remainingInTab = candidateSpecs.filter((s) => s.status === "Finded" && s.id !== specId);
+    const remainingInTab = candidateSpecs.filter((s) => s.status === "Placed" && s.id !== specId);
     setCandidateSpecs((prev) => prev.filter((s) => s.id !== specId));
     deleteCandidateSpecPermanently(specId, currentRole);
     setSelectedSpec(remainingInTab[0] || null);
@@ -847,7 +848,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
         const updatedSpec: CandidateSearchSpec = {
           ...spec,
           stage: newStage,
-          status: isPlaced ? "Finded" : "Searching",
+          status: isPlaced ? "Placed" : "Searching",
           profileLogs: [newLog, ...(spec.profileLogs || [])]
         };
 
@@ -881,7 +882,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
 
   // Dynamic Timeline Tracker: Identifies newest and first created profile
   const { newestSpecId, oldestSpecId } = useMemo(() => {
-    const activeList = candidateSpecs.filter((s) => s.status !== "Finded");
+    const activeList = candidateSpecs.filter((s) => s.status !== "Placed");
     const listToScan = activeList.length > 0 ? activeList : candidateSpecs;
     if (listToScan.length === 0) return { newestSpecId: null, oldestSpecId: null };
 
@@ -1142,9 +1143,9 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
   // Filter Profiles based on Search, Main Tab, and Timeline
   const filteredSpecs = useMemo(() => {
     return candidateSpecs.filter((spec) => {
-      // Main Tab Filter (Active Profiles vs Logs)
-      if (mainTab === "active" && spec.status === "Finded") return false;
-      if (mainTab === "logs" && spec.status !== "Finded") return false;
+      // Main Tab Filter (Active Profiles vs Placed Mandates)
+      if (mainTab === "active" && spec.status === "Placed") return false;
+      if (mainTab === "logs" && spec.status !== "Placed") return false;
 
       // Timeline filter
       if (selectedPriorityFilter === "Newest") {
@@ -1206,11 +1207,11 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                 <Target className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 uppercase">
-                  TARGET CANDIDATE PROFILES
+                <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                  Executive Search Mandates & Target Specs
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Executive candidate specifications & high-stakes placement operations ({activeCount} Active • {logsCount} Placed)
+                  Executive candidate specifications & high-stakes placement operations ({activeCount} Active Mandates • {logsCount} Placed Mandates)
                 </p>
               </div>
             </div>
@@ -1220,7 +1221,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                 <button
                   type="button"
                   onClick={() => revertAllCandidateSpecs(currentRole)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2.5 text-xs font-medium transition-all shadow-xs cursor-pointer"
                 >
                   <RotateCcw className="h-4 w-4" />
                   <span>Revert All ({logsCount})</span>
@@ -1230,7 +1231,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                 type="button"
                 onClick={restoreLastCandidateSpec}
                 disabled={deletedSpecsBuffer.length === 0 && logsCount === 0}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer"
               >
                 <RotateCcw className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Restore Last Action</span>
@@ -1240,18 +1241,18 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
               <button
                 type="button"
                 onClick={handleAddRandomProfile}
-                className="inline-flex items-center justify-center rounded-xl border border-emerald-600/30 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                className="inline-flex items-center justify-center rounded-xl border border-emerald-600/30 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 text-xs font-medium transition-all shadow-xs cursor-pointer active:scale-95"
               >
-                + Add Random Profile
+                + Add Random Mandate
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsCreateProfileOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:text-white px-4 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:text-white px-4 py-2.5 text-xs font-medium transition-all shadow-xs cursor-pointer active:scale-95"
               >
                 <PlusCircle className="h-4 w-4" />
-                <span>New Candidate Spec</span>
+                <span>New Mandate Spec</span>
               </button>
             </div>
           </div>
@@ -1265,7 +1266,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search across ${candidateSpecs.length} executive profiles (Role, Company, Challenge, Hunting Grounds)...`}
+                placeholder={`Search across ${candidateSpecs.length} executive mandates (Role, Company, Challenge, Hunting Grounds)...`}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800 py-2 pl-10 pr-10 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 transition-all focus:border-slate-900 dark:focus:border-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
               />
               {searchQuery && (
@@ -1279,29 +1280,29 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
               )}
             </div>
 
-            {/* Main Tabs (Active vs Finded) */}
+            {/* Main Tabs (Active Mandates vs Placed Mandates) */}
             <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0 border border-slate-200/60 dark:border-slate-700">
               <button
                 type="button"
                 onClick={() => setMainTab("active")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   mainTab === "active"
                     ? "bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs"
                     : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-700/60"
                 }`}
               >
-                Active ({activeCount})
+                Active Mandates ({activeCount})
               </button>
               <button
                 type="button"
                 onClick={() => setMainTab("logs")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   mainTab === "logs"
                     ? "bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs"
                     : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-700/60"
                 }`}
               >
-                Finded ({logsCount})
+                Placed Mandates ({logsCount})
               </button>
             </div>
 
@@ -1330,163 +1331,107 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {paginatedSpecs.map((spec) => {
-              const urgency = calculateMandateUrgencyScore(spec.daysOpen || 20, spec.qualifiedCandidatesCount ?? 1);
-              const currentStage: MandateStage = spec.stage || (spec.status === "Finded" ? "placed" : "sourcing");
-              const salary = spec.targetSalaryNumber || 320000;
-              const fee = salary * (spec.feePercentage || 0.30);
-              const weightedValue = fee * (STAGE_CONFIG[currentStage]?.probability ?? 0.20);
-
               return (
                 <div
                   key={spec.id}
-                  onClick={() => {
-                    setSelectedSpec(spec);
-                    setLedgerTab(spec.status === "Finded" ? "logs" : "active");
-                    setIsLedgerModalOpen(true);
-                  }}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-2xs hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-md transition-all cursor-pointer space-y-4"
+                  className="flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all space-y-4"
                 >
-                  {/* Header: Number Badge (Far Left) + Status & Urgency Index (Far Right) */}
+                  {/* Card Top: Role Title & Client + Badges */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      {/* Far Left: Number Badge + TARGET CANDIDATE PROFILE */}
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-md bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-mono text-xs font-black px-2.5 py-0.5 shadow-xs">
-                          {getProfileNumber(spec)}
-                        </span>
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200/60 dark:border-slate-700/60">
-                          TARGET CANDIDATE PROFILE
-                        </span>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            {spec.code}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            {spec.department || "Executive Search"}
+                          </span>
+                        </div>
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+                          {spec.roleTitle}
+                        </h2>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 mt-1">
+                          <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span>Client: <strong className="text-slate-900 dark:text-white font-medium">{spec.company}</strong></span>
+                        </div>
                       </div>
 
-                      {/* Far Right: Urgency Score & Status */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          className={`rounded-md px-2 py-0.5 text-[10px] font-mono font-extrabold border ${
-                            urgency.status === "high_risk"
-                              ? "bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800"
-                              : urgency.status === "moderate"
-                              ? "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                              : "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-                          }`}
-                        >
-                          Urgency: {urgency.score} ({urgency.label})
-                        </span>
-
-                        {spec.status === "Finded" ? (
-                          <span className="rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-mono text-[10px] font-black px-2 py-0.5 tracking-wider uppercase flex items-center gap-1">
+                      {/* Badges: Stage & Priority */}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        {spec.status === "Placed" ? (
+                          <span className="rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[11px] font-medium px-2.5 py-0.5 flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3" />
-                            FINDED
+                            Placed
                           </span>
                         ) : (
-                          <span className="rounded-md bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 font-mono text-[10px] font-black px-2 py-0.5 tracking-wider uppercase">
-                            SEARCHING
+                          <span className="rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium px-2.5 py-0.5">
+                            {STAGE_CONFIG[spec.stage || "sourcing"]?.shortLabel || "Active Search"}
                           </span>
                         )}
+                        <span className={`rounded-md px-2 py-0.5 text-[10px] font-medium border ${
+                          spec.priority === "Urgent"
+                            ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900"
+                            : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                        }`}>
+                          {spec.priority || "High"} Priority
+                        </span>
                       </div>
                     </div>
 
-                    {/* Role Title & Client */}
-                    <div className="pt-1 space-y-1">
-                      <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors tracking-tight">
-                        {spec.roleTitle}
-                      </h2>
-                      <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                        <Building2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                        <span>Client: <strong className="text-slate-900 dark:text-white font-bold">{spec.company}</strong></span>
+                    {/* Location & Compensation */}
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-1 truncate">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{spec.locationWorkspace}</span>
+                      </div>
+                      <span>•</span>
+                      <div className="flex items-center gap-1 truncate">
+                        <DollarSign className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{spec.compensationPackage}</span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Strategic Executive Indicators (Board Readiness & Weighted Fee) */}
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 space-y-0.5">
-                      <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
-                        <ShieldCheck className="h-3.5 w-3.5 text-slate-500" />
-                        Board Score
-                      </span>
-                      <p className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
-                        {spec.boardReadinessScore || 92}/100
-                      </p>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 space-y-0.5">
-                      <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
-                        <DollarSign className="h-3.5 w-3.5 text-slate-500" />
-                        Weighted Fee
-                      </span>
-                      <p className="font-extrabold text-emerald-600 dark:text-emerald-400 font-mono text-sm">
-                        ${Math.round(weightedValue / 1000)}k
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 1. Algoritmo de Valor de Pipeline: Interactive Mandate Stage Pipeline Selector */}
-                  <div
-                    className="space-y-1.5 p-2.5 rounded-xl bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      <span>Mandate Pipeline Stage</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-mono font-black">
-                        {Math.round((STAGE_CONFIG[currentStage]?.probability ?? 0.2) * 100)}% Prob. (${Math.round(fee / 1000)}k Max)
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-1">
-                      {(["sourcing", "shortlist", "board", "placed"] as MandateStage[]).map((stg) => {
-                        const isCurrent = currentStage === stg;
-                        return (
-                          <button
-                            key={stg}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUpdateStage(spec.id, stg);
-                            }}
-                            className={`px-1.5 py-1.5 rounded-lg text-[10px] font-bold transition-all text-center cursor-pointer active:scale-95 ${
-                              isCurrent
-                                ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs"
-                                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60"
-                            }`}
-                          >
-                            {STAGE_CONFIG[stg].shortLabel}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Summary row: Core Challenge */}
-                  <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Core Search Challenge:</span>
+                    {/* Brief Objective / Description (Max 2 lines) */}
                     <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
-                      {spec.coreChallenge || spec.clientProfile}
+                      {spec.coreChallenge || spec.strategicDriver || spec.clientProfile}
                     </p>
                   </div>
 
-                  {/* Clean Direct Action Button: Mark as Finded / Revert */}
-                  <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
+                  {/* Card Actions: Primary Button to open Dossier & Secondary Discretionary Placed / Revert */}
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleFinded(spec.id, false);
+                      onClick={() => {
+                        setSelectedSpec(spec);
+                        setLedgerTab(spec.status === "Placed" ? "logs" : "active");
+                        setIsLedgerModalOpen(true);
                       }}
-                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 ${
-                        spec.status === "Finded"
-                          ? "bg-rose-600 hover:bg-rose-500 text-white"
-                          : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                      }`}
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 text-xs font-medium transition-all shadow-xs cursor-pointer"
                     >
-                      {spec.status === "Finded" ? (
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>View Mandate Dossier & Candidate Spec</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePlaced(spec.id, false)}
+                      className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all border cursor-pointer ${
+                        spec.status === "Placed"
+                          ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                          : "border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+                      }`}
+                      title={spec.status === "Placed" ? "Revert to Active Search" : "Mark as Placed"}
+                    >
+                      {spec.status === "Placed" ? (
                         <>
                           <RotateCcw className="h-3.5 w-3.5" />
                           <span>Revert</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          <span>Mark as Finded</span>
+                          <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Mark Placed</span>
                         </>
                       )}
                     </button>
@@ -1645,7 +1590,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                           : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
                       }`}
                     >
-                      Active ({activeCount})
+                      Active Mandates ({activeCount})
                     </button>
                     <button
                       type="button"
@@ -1656,7 +1601,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                           : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
                       }`}
                     >
-                      Finded Logs ({logsCount})
+                      Placed Mandates ({logsCount})
                     </button>
                   </div>
 
@@ -1960,7 +1905,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                       {/* Modal Footer */}
                       <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/90 flex items-center justify-between gap-3 shrink-0">
                         <span className="text-xs text-slate-500">
-                          {ledgerTab === "logs" ? "Profile in Finded history ledger." : "Active candidate search mandate."}
+                          {ledgerTab === "logs" ? "Mandate in Placed history ledger." : "Active candidate search mandate."}
                         </span>
 
                         <div className="flex items-center gap-2">
@@ -1988,7 +1933,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
 
                               <button
                                 type="button"
-                                onClick={() => handleToggleFinded(selectedSpec.id, true)}
+                                onClick={() => handleTogglePlaced(selectedSpec.id, true)}
                                 className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-bold text-white shadow-xs"
                               >
                                 <RotateCcw className="h-4 w-4" />
@@ -1998,11 +1943,11 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                           ) : (
                             <button
                               type="button"
-                              onClick={() => handleToggleFinded(selectedSpec.id, true)}
+                              onClick={() => handleTogglePlaced(selectedSpec.id, true)}
                               className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-xs"
                             >
                               <CheckCircle2 className="h-4 w-4" />
-                              <span>Mark as Finded</span>
+                              <span>Mark as Placed</span>
                             </button>
                           )}
                         </div>

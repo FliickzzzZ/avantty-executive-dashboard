@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    --font-sans: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,95 +48,104 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Light Mode: Pure Minimalist Enterprise (#080B0A, #FFFFFF, #00875A) */
 :root {
-    --background: #F8FAFC;
-    --foreground: #0F172A;
+    --background: #FFFFFF;
+    --foreground: #080B0A;
     --card: #FFFFFF;
-    --card-foreground: #0F172A;
+    --card-foreground: #080B0A;
     --popover: #FFFFFF;
-    --popover-foreground: #0F172A;
-    --primary: #059669;
+    --popover-foreground: #080B0A;
+    --primary: #00875A;
     --primary-foreground: #FFFFFF;
-    --secondary: #F1F5F9;
-    --secondary-foreground: #1E293B;
-    --muted: #F1F5F9;
-    --muted-foreground: #64748B;
-    --accent: #ECFDF5;
-    --accent-foreground: #047857;
+    --secondary: #F5F7F6;
+    --secondary-foreground: #080B0A;
+    --muted: #F5F7F6;
+    --muted-foreground: #5C6662;
+    --accent: #E6F3EE;
+    --accent-foreground: #00875A;
     --destructive: #DC2626;
-    --border: #E2E8F0;
-    --input: #E2E8F0;
-    --ring: #10B981;
-    --chart-1: #10B981;
-    --chart-2: #059669;
-    --chart-3: #34D399;
-    --chart-4: #059669;
-    --chart-5: #047857;
-    --radius: 0.625rem;
+    --border: #E5E8E7;
+    --input: #E5E8E7;
+    --ring: #00875A;
+    --chart-1: #00875A;
+    --chart-2: #006E49;
+    --chart-3: #26A87C;
+    --chart-4: #4DBF97;
+    --chart-5: #004D33;
+    --radius: 0.5rem;
     --sidebar: #FFFFFF;
-    --sidebar-foreground: #0F172A;
-    --sidebar-primary: #059669;
+    --sidebar-foreground: #080B0A;
+    --sidebar-primary: #00875A;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #F1F5F9;
-    --sidebar-accent-foreground: #0F172A;
-    --sidebar-border: #E2E8F0;
-    --sidebar-ring: #10B981;
+    --sidebar-accent: #F5F7F6;
+    --sidebar-accent-foreground: #080B0A;
+    --sidebar-border: #E5E8E7;
+    --sidebar-ring: #00875A;
 }
 
-/* Executive High-Visibility Dark Mode (Balanced Contrast & Clear Boundaries) */
+/* Dark Mode: Pure Deep Minimalist Enterprise (#080B0A, #FFFFFF, #00875A) */
 .dark {
-    --background: #0B0F19;
-    --foreground: #F8FAFC;
-    --card: #131B2E;
-    --card-foreground: #F8FAFC;
-    --popover: #131B2E;
-    --popover-foreground: #F8FAFC;
-    --primary: #10B981;
+    --background: #080B0A;
+    --foreground: #FFFFFF;
+    --card: #111614;
+    --card-foreground: #FFFFFF;
+    --popover: #111614;
+    --popover-foreground: #FFFFFF;
+    --primary: #00875A;
     --primary-foreground: #FFFFFF;
-    --secondary: #1E293B;
-    --secondary-foreground: #F8FAFC;
-    --muted: #1E293B;
-    --muted-foreground: #94A3B8;
-    --accent: #064E3B;
+    --secondary: #18201C;
+    --secondary-foreground: #FFFFFF;
+    --muted: #18201C;
+    --muted-foreground: #8B9993;
+    --accent: #0E241D;
     --accent-foreground: #34D399;
     --destructive: #EF4444;
-    --border: #243048;
-    --input: #243048;
-    --ring: #10B981;
-    --chart-1: #10B981;
-    --chart-2: #059669;
-    --chart-3: #34D399;
-    --chart-4: #6EE7B7;
-    --chart-5: #047857;
-    --sidebar: #0E1424;
-    --sidebar-foreground: #F8FAFC;
-    --sidebar-primary: #10B981;
+    --border: #222B27;
+    --input: #222B27;
+    --ring: #00875A;
+    --chart-1: #00875A;
+    --chart-2: #26A87C;
+    --chart-3: #4DBF97;
+    --chart-4: #006E49;
+    --chart-5: #111614;
+    --sidebar: #0C110F;
+    --sidebar-foreground: #FFFFFF;
+    --sidebar-primary: #00875A;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #1E293B;
+    --sidebar-accent: #18201C;
     --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #243048;
-    --sidebar-ring: #10B981;
+    --sidebar-border: #222B27;
+    --sidebar-ring: #00875A;
 }
 
 .dark body {
-  background-color: #0B0F19;
-  color: #F8FAFC;
+  background-color: #080B0A;
+  color: #FFFFFF;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50 font-sans;
-    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 400;
     overscroll-behavior: contain;
   }
   html {
     @apply font-sans;
-    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     overscroll-behavior: contain;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 600;
+  }
+  label, button, input, select, textarea {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
   html.modal-open,
   body.modal-open {

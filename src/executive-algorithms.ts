@@ -49,7 +49,7 @@ export function calculateExecutivePipelineMetrics(
   let placedCount = 0;
 
   for (const spec of specs) {
-    const isPlaced = spec.status === "Finded" || spec.stage === "placed";
+    const isPlaced = spec.status === "Placed" || spec.stage === "placed";
     const salary = spec.targetSalaryNumber || 320000;
     const feePct = spec.feePercentage || DEFAULT_SEARCH_FEE_PERCENTAGE;
     const placementFee = salary * feePct;

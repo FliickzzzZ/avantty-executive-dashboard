@@ -18,24 +18,41 @@ import {
   ShieldCheck,
   ShieldAlert,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  RotateCcw,
+  Trash2,
+  AlertCircle,
+  KeyRound,
+  Shield
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useLogs, LogCategory, LogLevel, LogEntry } from "@/src/logs-context";
+import { useAppData } from "@/src/app-data-context";
+import { UserRole, SystemSnapshot, CriticalSecurityIncident } from "@/src/types";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 
-export function LogsView() {
-  const { logs, addLog } = useLogs();
+interface LogsViewProps {
+  currentRole?: UserRole;
+}
+
+export function LogsView({ currentRole = "CEO" }: LogsViewProps) {
+  const { logs, criticalIncidents, addLog, clearLogs } = useLogs();
+  const { systemSnapshots, restoreFromSnapshot, activeSecurityIncident } = useAppData();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedLevel, setSelectedLevel] = useState<string>("All");
   const [isAddLogModalOpen, setIsAddLogModalOpen] = useState(false);
-  // Selected Log Modal state
   const [selectedLogItem, setSelectedLogItem] = useState<LogEntry | null>(null);
 
+  // CEO Security & Snapshot Recovery State
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<SystemSnapshot | null>(null);
+  const [isClearLogsModalOpen, setIsClearLogsModalOpen] = useState(false);
+  const [restoreSuccessToast, setRestoreSuccessToast] = useState(false);
+
   // Lock body scroll when modal is open
-  useLockBodyScroll(isAddLogModalOpen || !!selectedLogItem);
+  useLockBodyScroll(isAddLogModalOpen || !!selectedLogItem || isRestoreModalOpen || isClearLogsModalOpen);
 
   // New log form state
   const [newCategory, setNewCategory] = useState<LogCategory>("System");
@@ -149,10 +166,20 @@ export function LogsView() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {currentRole === "CEO" && (
+                <button
+                  type="button"
+                  onClick={() => setIsClearLogsModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 px-3.5 py-2 text-xs font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-all cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Purge Logs</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setIsAddLogModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-500 transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-emerald-500 transition-all shadow-xs cursor-pointer"
               >
                 <PlusCircle className="h-4 w-4" />
                 <span>Manual Event</span>
@@ -160,7 +187,7 @@ export function LogsView() {
               <button
                 type="button"
                 onClick={handleExportJSON}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
               >
                 <Download className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 <span>Export JSON</span>
@@ -237,6 +264,140 @@ export function LogsView() {
           </div>
         </div>
       </Card>
+
+      {/* CEO-Only Private Security & Disaster Recovery Section */}
+      {currentRole === "CEO" && (
+        <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900">
+                <ShieldCheck className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <span>Security & System Recovery Command</span>
+                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    CEO Private
+                  </span>
+                </CardTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Critical incident ledger, rapid mass deletion alerts, and immutable snapshot rollback
+                </p>
+              </div>
+            </div>
+
+            {systemSnapshots.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedSnapshot(systemSnapshots[0]);
+                  setIsRestoreModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 px-3.5 py-2 text-xs font-medium transition-all shadow-xs cursor-pointer"
+              >
+                <RotateCcw className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-600" />
+                <span>Restore from Last System Snapshot</span>
+              </button>
+            )}
+          </CardHeader>
+
+          <CardContent className="p-5 space-y-4">
+            {/* Critical Alert if Rapid Mass Deletion Detected (#EF4444) */}
+            {(activeSecurityIncident || criticalIncidents.length > 0) ? (
+              <div className="rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs text-rose-900 dark:text-rose-200 space-y-2">
+                <div className="flex items-center gap-2 font-semibold text-rose-700 dark:text-rose-400">
+                  <ShieldAlert className="h-4 w-4 shrink-0 text-[#EF4444]" />
+                  <span>CRITICAL SECURITY ALERT: Mass Deletion / Security Anomaly Detected</span>
+                </div>
+                <p className="text-xs leading-relaxed text-rose-800 dark:text-rose-300">
+                  {activeSecurityIncident?.description ||
+                    criticalIncidents[0]?.description ||
+                    "A rapid mutation or deletion velocity threshold was triggered. Data mutation rights were restricted."}
+                </p>
+                <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                  <span className="font-mono text-[11px] text-rose-700 dark:text-rose-400">
+                    Target: {activeSecurityIncident?.affectedResources.resourceType || "candidate_specs"} ({activeSecurityIncident?.affectedResources.count || 3} items) • Velocity: {activeSecurityIncident?.technicalMetadata.actionVelocity || "<10s threshold"}
+                  </span>
+                  {systemSnapshots.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedSnapshot(systemSnapshots[0]);
+                        setIsRestoreModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 text-xs font-medium transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      <span>Review & Restore Snapshot</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-3.5 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>No active critical security alerts. Immutable ledger integrity: 100% verified.</span>
+                </div>
+                {systemSnapshots.length > 0 ? (
+                  <span className="font-mono text-[11px] text-slate-500">
+                    Latest Snapshot: {new Date(systemSnapshots[0].timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ({systemSnapshots[0].itemCount.specs} Mandates, {systemSnapshots[0].itemCount.meetings} Meetings)
+                  </span>
+                ) : (
+                  <span className="font-mono text-[11px] text-slate-400">Snapshot state: Standby</span>
+                )}
+              </div>
+            )}
+
+            {/* Critical Incidents Ledger */}
+            {criticalIncidents.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Critical Incidents History ({criticalIncidents.length})
+                </div>
+                <div className="space-y-2">
+                  {criticalIncidents.map((inc) => (
+                    <div
+                      key={inc.id}
+                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400">
+                            {inc.severity}
+                          </span>
+                          <span className="font-medium text-slate-900 dark:text-white">
+                            {inc.eventType}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {new Date(inc.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">
+                          {inc.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-mono text-slate-500">
+                          By: {inc.initiatedBy.name} ({inc.initiatedBy.role})
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                          inc.status === "RESTORED"
+                            ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400"
+                            : "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400"
+                        }`}>
+                          {inc.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Logs Stream Container */}
       <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm rounded-2xl overflow-hidden">
@@ -565,6 +726,166 @@ export function LogsView() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Snapshot Restoration Confirmation Modal (Section 10 Requirement) */}
+      <AnimatePresence>
+        {isRestoreModalOpen && selectedSnapshot && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 text-slate-900 dark:text-slate-100"
+            >
+              <button
+                type="button"
+                onClick={() => setIsRestoreModalOpen(false)}
+                className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-4 pr-8">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400">
+                  <RotateCcw className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                    Confirm System Snapshot Restoration
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Disaster recovery and state rollback for CEO governance
+                  </p>
+                </div>
+              </div>
+
+              {/* Exact Data to be restored */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2.5 text-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Data Captured in Snapshot ({selectedSnapshot.id})
+                </span>
+                <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <div className="text-[10px] text-slate-400 font-medium">Search Mandates</div>
+                    <div className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
+                      {selectedSnapshot.itemCount.specs}
+                    </div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <div className="text-[10px] text-slate-400 font-medium">Interviews</div>
+                    <div className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
+                      {selectedSnapshot.itemCount.meetings}
+                    </div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <div className="text-[10px] text-slate-400 font-medium">Dispatches</div>
+                    <div className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
+                      {selectedSnapshot.itemCount.dispatches}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono pt-1">
+                  Captured at: {new Date(selectedSnapshot.timestamp).toLocaleString()}
+                </div>
+              </div>
+
+              {/* Warning Alert (#EF4444) */}
+              <div className="rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 p-3.5 text-xs text-rose-800 dark:text-rose-300 space-y-1">
+                <div className="flex items-center gap-2 font-semibold text-rose-700 dark:text-rose-400">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-[#EF4444]" />
+                  <span>Permanent Rollback Warning</span>
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  Restoring will overwrite all current candidate mandates, meetings, and dispatch logs with this snapshot. Any subsequent changes made after this snapshot was captured will be replaced.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsRestoreModalOpen(false)}
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    restoreFromSnapshot(selectedSnapshot.id, "CEO");
+                    setIsRestoreModalOpen(false);
+                    setRestoreSuccessToast(true);
+                    setTimeout(() => setRestoreSuccessToast(false), 5000);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-medium text-white transition-colors cursor-pointer shadow-sm"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>Confirm System Restoration</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Clear Logs Confirmation Modal */}
+      <AnimatePresence>
+        {isClearLogsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 text-slate-900 dark:text-slate-100"
+            >
+              <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950 text-rose-600 border border-rose-200 dark:border-rose-900">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                    Confirm Audit Log Purge
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    CEO-Authorized action
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Are you sure you want to purge the activity log ledger? As CEO, this action will reset normal log entries, and a permanent incident record will be added to the security audit stream.
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsClearLogsModalOpen(false)}
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearLogs("CEO");
+                    setIsClearLogsModalOpen(false);
+                  }}
+                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 text-xs font-medium cursor-pointer"
+                >
+                  Confirm Log Purge
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Toast */}
+      {restoreSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-emerald-600 text-white px-4 py-3 text-xs font-medium shadow-xl">
+          <CheckCircle2 className="h-4 w-4" />
+          <span>System successfully restored from snapshot ledger!</span>
+        </div>
+      )}
     </div>
   );
 }

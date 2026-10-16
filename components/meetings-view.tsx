@@ -235,10 +235,11 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
   const {
     meetingsByDay,
     setMeetingsByDay,
-    deletedMeetingsBuffer,
-    sourceMeeting,
+    endedMeetingsLedger,
+    deletedMeetingsBuffer = endedMeetingsLedger,
+    endMeeting,
+    reopenMeeting,
     restoreLastMeeting,
-    restoreMeetingById,
     deleteMeetingPermanently,
     revertAllMeetings,
     focusedMeetingId,
@@ -325,7 +326,7 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
     return () => clearInterval(interval);
   }, [setMeetingsByDay]);
 
-  // Handle meeting auto-completion when countdown reaches 00:00
+  // Handle meeting auto-completion when countdown reaches 00:00 (Call finished event)
   useEffect(() => {
     Object.keys(meetingsByDay).forEach((dayKey) => {
       const day = dayKey as WeekDay;
@@ -339,23 +340,21 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
           setFadingCountdownIds((fading) => [...fading, item.id]);
 
           setTimeout(() => {
-            setMeetingsByDay((curr) => ({
-              ...curr,
-              [day]: curr[day].filter((m) => m.id !== item.id),
-            }));
+            endMeeting(item.id, currentRole, day, "bot_call_completed");
             setFadingCountdownIds((fading) => fading.filter((id) => id !== item.id));
 
             addLog({
-              category: "Meeting Bot",
-              action: "Meeting Session Auto-Completed (00:00 Countdown)",
-              details: `Meeting session with candidate ${item.candidate} (${item.clientCompany}) reached 00:00 countdown and was automatically archived.`,
-              level: "info",
+              category: "Meetings",
+              action: `Meeting Ended Automatically: ${item.candidate}`,
+              details: `Session with ${item.candidate} (${item.clientCompany}) concluded. Meeting moved to Ended ledger and instant follow-up dispatched.`,
+              level: "success",
+              userRole: currentRole
             });
           }, 500);
         }
       });
     });
-  }, [meetingsByDay, fadingCountdownIds, addLog, setMeetingsByDay]);
+  }, [meetingsByDay, fadingCountdownIds, addLog, endMeeting, currentRole]);
 
   const formatCountdown = (totalSec?: number) => {
     if (typeof totalSec !== "number") return "00:00";
@@ -433,15 +432,15 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
   };
 
   // Mark as ended / sourced: updates state
+  // Mark as ended: updates state, archives to Ended ledger, and triggers instant follow-up
   const handleMarkAsMeetingEnded = (meetingId: string, fromModal: boolean = false) => {
     if (!fromModal) {
       setSlidingSourcedIds((prev) => [...prev, meetingId]);
     }
 
-    sourceMeeting(meetingId, currentRole, selectedDay);
+    endMeeting(meetingId, currentRole, selectedDay, "manual_action");
 
     if (fromModal) {
-      // In modal Active Profiles: reset detail view selection
       setSelectedMeeting(null);
     } else {
       if (selectedMeeting?.id === meetingId) {
@@ -453,22 +452,22 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
     }
   };
 
-  // Revert meeting action: restores meeting from logs to active and auto-selects next log
+  // Revert meeting action: restores meeting from Ended ledger to active schedule
   const handleRevertMeeting = (meetingId: string) => {
-    const currentIdx = deletedMeetingsBuffer.findIndex((m) => m.id === meetingId);
-    const remainingBuffer = deletedMeetingsBuffer.filter((m) => m.id !== meetingId);
+    const currentIdx = endedMeetingsLedger.findIndex((m) => m.id === meetingId);
+    const remainingBuffer = endedMeetingsLedger.filter((m) => m.id !== meetingId);
     let nextMeeting: MeetingItem | null = null;
     if (remainingBuffer.length > 0) {
       nextMeeting = remainingBuffer[currentIdx] || remainingBuffer[remainingBuffer.length - 1] || remainingBuffer[0];
     }
-    restoreMeetingById(meetingId, currentRole);
+    reopenMeeting(meetingId, currentRole);
     setSelectedMeeting(nextMeeting);
   };
 
   // Permanently delete meeting from logs and auto-select next log
   const handlePermanentDeleteMeeting = (meetingId: string) => {
-    const currentIdx = deletedMeetingsBuffer.findIndex((m) => m.id === meetingId);
-    const remainingBuffer = deletedMeetingsBuffer.filter((m) => m.id !== meetingId);
+    const currentIdx = endedMeetingsLedger.findIndex((m) => m.id === meetingId);
+    const remainingBuffer = endedMeetingsLedger.filter((m) => m.id !== meetingId);
     let nextMeeting: MeetingItem | null = null;
     if (remainingBuffer.length > 0) {
       nextMeeting = remainingBuffer[currentIdx] || remainingBuffer[remainingBuffer.length - 1] || remainingBuffer[0];
@@ -481,17 +480,17 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
     restoreLastMeeting(selectedDay);
   };
 
-  // Check if a meeting is in the finded/logs buffer
-  const isFindedMeeting = (meetingId: string) => {
-    return deletedMeetingsBuffer.some((m) => m.id === meetingId);
+  // Check if a meeting is in the ended ledger
+  const isEndedMeeting = (meetingId: string) => {
+    return endedMeetingsLedger.some((m) => m.id === meetingId);
   };
 
-  const isSelectedMeetingFinded = selectedMeeting
-    ? isFindedMeeting(selectedMeeting.id) || selectedMeeting.status === "sourced"
+  const isSelectedMeetingEnded = selectedMeeting
+    ? isEndedMeeting(selectedMeeting.id) || selectedMeeting.status === "completed"
     : false;
 
   // Sidebar list for modal Master-Detail view
-  const modalSidebarList = ledgerTab === "active" ? allActiveMeetings : deletedMeetingsBuffer;
+  const modalSidebarList = ledgerTab === "active" ? allActiveMeetings : endedMeetingsLedger;
 
   return (
     <div className="relative flex flex-col gap-6 text-slate-900 dark:text-slate-100">
@@ -639,7 +638,7 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
           activeDayMeetings.map((meeting) => {
             const isFading = fadingCountdownIds.includes(meeting.id);
             const isSliding = slidingSourcedIds.includes(meeting.id);
-            const isFinded = isFindedMeeting(meeting.id);
+            const isEnded = isEndedMeeting(meeting.id);
 
             return (
               <motion.div
@@ -705,22 +704,22 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (isFinded) {
+                        if (isEnded) {
                           handleRevertMeeting(meeting.id);
                         } else {
                           handleMarkAsMeetingEnded(meeting.id, false);
                         }
                       }}
                       className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-xs cursor-pointer ${
-                        isFinded
-                          ? "bg-rose-600 hover:bg-rose-500 text-white"
-                          : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                        isEnded
+                          ? "bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200"
+                          : "bg-[#00875A] hover:bg-[#006E49] text-white"
                       }`}
                     >
-                      {isFinded ? (
+                      {isEnded ? (
                         <>
                           <RotateCcw className="h-3.5 w-3.5" />
-                          <span>Revert</span>
+                          <span>Reopen</span>
                         </>
                       ) : (
                         <>
@@ -870,7 +869,7 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
                     ) : (
                       modalSidebarList.map((m) => {
                         const isSelected = selectedMeeting?.id === m.id;
-                        const isFinded = isFindedMeeting(m.id);
+                        const isEnded = isEndedMeeting(m.id);
 
                         return (
                           <button
@@ -885,7 +884,7 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1.5 truncate">
                                 <span className={`h-2 w-2 rounded-full shrink-0 ${
-                                  isFinded ? "bg-emerald-500" : "bg-slate-400 dark:bg-slate-500"
+                                  isEnded ? "bg-[#00875A]" : "bg-slate-400 dark:bg-slate-500"
                                 }`} />
                                 <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
                                   {m.clientCompany}
@@ -904,12 +903,12 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
                               <span className="text-slate-500 dark:text-slate-400 font-mono">
                                 {m.time}
                               </span>
-                              {isFinded ? (
-                                <span className="bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/80 font-black px-1.5 py-0.2 rounded uppercase text-[9px]">
-                                  FINDED
+                              {isEnded ? (
+                                <span className="bg-[#00875A]/10 text-[#00875A] border border-[#00875A]/30 font-bold px-1.5 py-0.5 rounded uppercase text-[9px]">
+                                  ENDED
                                 </span>
                               ) : (
-                                <span className="bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/80 font-black px-1.5 py-0.2 rounded uppercase text-[9px]">
+                                <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-bold px-1.5 py-0.5 rounded uppercase text-[9px]">
                                   {m.status.toUpperCase()}
                                 </span>
                               )}
@@ -958,12 +957,12 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
                             {selectedMeeting.role}
                           </span>
 
-                          {isSelectedMeetingFinded ? (
-                            <span className="rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-black border border-emerald-200 dark:border-emerald-800 uppercase tracking-wide">
-                              FINDED
+                          {isSelectedMeetingEnded ? (
+                            <span className="rounded-lg bg-[#00875A]/10 text-[#00875A] px-3 py-1 text-xs font-bold border border-[#00875A]/30 uppercase tracking-wide">
+                              ENDED
                             </span>
                           ) : (
-                            <span className="rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-black border border-emerald-200 dark:border-emerald-800 uppercase tracking-wide">
+                            <span className="rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1 text-xs font-bold border border-slate-200 dark:border-slate-700 uppercase tracking-wide">
                               {selectedMeeting.status.toUpperCase()}
                             </span>
                           )}
@@ -1113,9 +1112,9 @@ export function MeetingsView({ currentRole = "CEO" }: MeetingsViewProps) {
                         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
                           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span className="truncate">
-                            {isSelectedMeetingFinded
-                              ? "Executive placement candidate recorded in firm audit ledger."
-                              : "Transmits executive evaluation telemetry to search placement pipeline."}
+                            {isSelectedMeetingEnded
+                              ? "Executive interview session completed. Record archived to Ended ledger with transcript debrief."
+                              : "Transmits real-time interview evaluation telemetry to search placement pipeline."}
                           </span>
                         </div>
 

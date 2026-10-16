@@ -1,79 +1,17 @@
+"use client";
+
 import * as React from "react";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Clock, Video, User, ChevronRight, X } from "lucide-react";
+import { CalendarDays, Clock, Video, User, ChevronRight, X, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
-
-interface Meeting {
-  id: string;
-  time: string;
-  candidate: string;
-  role: string;
-  interviewer: string;
-  status: "completed" | "upcoming" | "in-progress";
-  type: string;
-}
-
-const MEETINGS_TODAY: Meeting[] = [
-  {
-    id: "m1",
-    time: "09:30 AM",
-    candidate: "Marcus Vance",
-    role: "Chief Technology Officer (CTO)",
-    interviewer: "Sarah Jenkins (Partner)",
-    status: "completed",
-    type: "Executive Placement Vetting",
-  },
-  {
-    id: "m2",
-    time: "11:00 AM",
-    candidate: "Elena Rostova",
-    role: "VP of Engineering",
-    interviewer: "David Kim (Director)",
-    status: "completed",
-    type: "Executive Leadership Sync",
-  },
-  {
-    id: "m3",
-    time: "01:15 PM",
-    candidate: "Liam Chen",
-    role: "Chief Information Security Officer",
-    interviewer: "Alex Rivera (Partner)",
-    status: "completed",
-    type: "C-Suite Security Vetting",
-  },
-  {
-    id: "m4",
-    time: "02:30 PM",
-    candidate: "Sophia Martinez",
-    role: "Chief Product Officer (CPO)",
-    interviewer: "Rachel Adams (Director)",
-    status: "in-progress",
-    type: "Product Portfolio & Strategy Review",
-  },
-  {
-    id: "m5",
-    time: "04:00 PM",
-    candidate: "James O'Connor",
-    role: "Managing Director, Global Infra",
-    interviewer: "Michael Scott (Partner)",
-    status: "upcoming",
-    type: "P&L & Board Readiness Sync",
-  },
-  {
-    id: "m6",
-    time: "05:15 PM",
-    candidate: "Aria Takahashi",
-    role: "Chief AI Officer (CAIO)",
-    interviewer: "Naim Ramos (Managing Partner)",
-    status: "upcoming",
-    type: "Final Executive Placement Sync",
-  },
-];
+import { useAppData } from "@/src/app-data-context";
+import { MeetingItem } from "@/components/meetings-view";
 
 export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { meetingsByDay, endedMeetingsLedger } = useAppData();
 
   useLockBodyScroll(isOpen);
 
@@ -85,8 +23,32 @@ export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
     }
   };
 
-  const completedCount = MEETINGS_TODAY.filter((m) => m.status === "completed").length;
-  const totalMeetings = MEETINGS_TODAY.length;
+  // Reconcile live active schedule with ended meetings ledger for Monday (standard schedule day)
+  const activeMeetings = meetingsByDay["Monday"] || [];
+  const endedMeetingsForToday = endedMeetingsLedger.filter((m) => m.day === "Monday");
+
+  // Deduplicate by meeting ID if any overlap
+  const seenIds = new Set<string>();
+  const allTodayMeetings: MeetingItem[] = [];
+
+  for (const m of activeMeetings) {
+    if (!seenIds.has(m.id)) {
+      seenIds.add(m.id);
+      allTodayMeetings.push(m);
+    }
+  }
+
+  for (const m of endedMeetingsForToday) {
+    if (!seenIds.has(m.id)) {
+      seenIds.add(m.id);
+      allTodayMeetings.push({ ...m, status: "completed" });
+    }
+  }
+
+  const completedCount = allTodayMeetings.filter(
+    (m) => m.status === "completed" || m.status === "sourced"
+  ).length;
+  const totalMeetings = allTodayMeetings.length;
 
   return (
     <>
@@ -105,7 +67,7 @@ export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
               </CardTitle>
             </div>
             <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-              Scheduled interviews & screening sessions today
+              Scheduled interviews & screening sessions today (Live Sync)
             </CardDescription>
           </div>
           <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -124,43 +86,53 @@ export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
               </span>
             </div>
             <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-              {completedCount} completed
+              {completedCount} ended / completed
             </span>
           </div>
 
           {/* Quick Schedule Preview List */}
-          <div className="space-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2.5 border border-slate-200 dark:border-slate-800">
-            {MEETINGS_TODAY.slice(0, 3).map((meeting) => (
-              <div
-                key={meeting.id}
-                className="flex items-center justify-between text-xs py-1 px-1.5 rounded-md hover:bg-white dark:hover:bg-slate-800 transition-colors"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                  <span className="font-mono font-medium text-slate-900 dark:text-slate-100 shrink-0">
-                    {meeting.time}
-                  </span>
-                  <span className="truncate font-medium text-slate-600 dark:text-slate-300">
-                    {meeting.candidate}
+          <div className="space-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2.5 border border-slate-200 dark:border-slate-800 min-h-[90px]">
+            {allTodayMeetings.length === 0 ? (
+              <div className="flex items-center justify-center h-20 text-xs text-slate-400">
+                No meetings scheduled for today
+              </div>
+            ) : (
+              allTodayMeetings.slice(0, 3).map((meeting) => (
+                <div
+                  key={meeting.id}
+                  className="flex items-center justify-between text-xs py-1 px-1.5 rounded-md hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    <span className="font-mono font-medium text-slate-900 dark:text-slate-100 shrink-0">
+                      {meeting.time}
+                    </span>
+                    <span className="truncate font-medium text-slate-600 dark:text-slate-300">
+                      {meeting.candidate}
+                    </span>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-bold ${
+                      meeting.status === "completed" || meeting.status === "sourced"
+                        ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xs"
+                        : meeting.status === "in-progress"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    {meeting.status === "completed" || meeting.status === "sourced"
+                      ? "Ended"
+                      : meeting.status === "in-progress"
+                      ? "In Progress"
+                      : "Upcoming"}
                   </span>
                 </div>
-                <span
-                  className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-bold ${
-                    meeting.status === "completed"
-                      ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xs"
-                      : meeting.status === "in-progress"
-                      ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                  }`}
-                >
-                  {meeting.status}
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           <div className="flex items-center justify-between text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:translate-x-0.5 transition-transform">
-            <span>View full daily schedule ({totalMeetings})</span>
+            <span>View full daily schedule ({totalMeetings} meetings)</span>
             <ChevronRight className="h-4 w-4" />
           </div>
         </CardContent>
@@ -199,7 +171,7 @@ export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
                       Daily Meetings Schedule
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Today&apos;s candidate interviews and screening calls
+                      Live synched candidate interviews and executive screening calls
                     </p>
                   </div>
                 </div>
@@ -212,7 +184,7 @@ export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
               </div>
 
               <div className="mt-4 max-h-[60vh] space-y-3 overflow-y-auto pr-1">
-                {MEETINGS_TODAY.map((meeting) => (
+                {allTodayMeetings.map((meeting) => (
                   <div
                     key={meeting.id}
                     className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3.5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900"
@@ -224,14 +196,18 @@ export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
                       </div>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                          meeting.status === "completed"
+                          meeting.status === "completed" || meeting.status === "sourced"
                             ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xs"
                             : meeting.status === "in-progress"
-                            ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
-                        {meeting.status}
+                        {meeting.status === "completed" || meeting.status === "sourced"
+                          ? "Ended"
+                          : meeting.status === "in-progress"
+                          ? "In Progress"
+                          : "Upcoming"}
                       </span>
                     </div>
 
@@ -241,7 +217,7 @@ export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
                           {meeting.candidate}
                         </div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {meeting.role} • {meeting.type}
+                          {meeting.role} • {meeting.type || "Executive Screening"}
                         </div>
                       </div>
                     </div>
@@ -250,15 +226,32 @@ export function DailyMeetingsCard({ onNavigate }: { onNavigate?: () => void }) {
                       <span className="flex items-center gap-1">
                         <User className="h-3 w-3" /> Interviewer: {meeting.interviewer}
                       </span>
-                      <span className="flex items-center gap-1 text-slate-900 dark:text-slate-100 font-medium cursor-pointer hover:underline">
-                        <Video className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> Join Call
-                      </span>
+                      {meeting.status !== "completed" && meeting.status !== "sourced" ? (
+                        <span className="flex items-center gap-1 text-slate-900 dark:text-slate-100 font-medium cursor-pointer hover:underline">
+                          <Video className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> Join Call
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                          <CheckCircle2 className="h-3 w-3" /> Meeting Ended
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-5 flex justify-end">
+              <div className="mt-5 flex justify-end gap-2">
+                {onNavigate && (
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      onNavigate();
+                    }}
+                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Open Meetings Module
+                  </button>
+                )}
                 <button
                   onClick={() => setIsOpen(false)}
                   className="rounded-xl bg-slate-900 dark:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"

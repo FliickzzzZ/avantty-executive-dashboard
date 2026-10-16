@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { UserRole } from "@/src/types";
+import { UserRole, FollowUpDispatch, CriticalSecurityIncident, SystemSnapshot, MOCK_USERS } from "@/src/types";
 import { MeetingItem, WeekDay, INITIAL_MEETINGS_BY_DAY } from "@/components/meetings-view";
 import { CandidateSearchSpec, INITIAL_CANDIDATE_SPECS } from "@/components/search-candidates-view";
 import { useLogs } from "@/src/logs-context";
@@ -204,7 +204,9 @@ export function slugifyCompanyName(name: string): string {
     .trim()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function unslugifyCompanyName(slug: string): string {
@@ -213,6 +215,49 @@ export function unslugifyCompanyName(slug: string): string {
     .split(/[-_]+/)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+export interface SubdomainValidation {
+  isValid: boolean;
+  subdomain: string;
+  error?: string;
+  dnsRequirements: string;
+}
+
+export function validateSubdomain(name: string): SubdomainValidation {
+  const clean = slugifyCompanyName(name);
+  const dnsReq = "Requires external Wildcard DNS (*.avanttyops.com) or CNAME record on Cloudflare/DNS provider.";
+  
+  if (!clean || clean.length < 3) {
+    return {
+      isValid: false,
+      subdomain: clean,
+      error: "Subdomain must contain at least 3 characters.",
+      dnsRequirements: dnsReq
+    };
+  }
+  if (clean.length > 63) {
+    return {
+      isValid: false,
+      subdomain: clean.slice(0, 63),
+      error: "Subdomain exceeds maximum length of 63 characters.",
+      dnsRequirements: dnsReq
+    };
+  }
+  const reserved = ["admin", "api", "auth", "mail", "dev", "staging", "app", "dashboard", "root", "dns", "login", "ssl"];
+  if (reserved.includes(clean)) {
+    return {
+      isValid: false,
+      subdomain: clean,
+      error: `'${clean}' is a reserved infrastructure prefix and cannot be used.`,
+      dnsRequirements: dnsReq
+    };
+  }
+  return {
+    isValid: true,
+    subdomain: clean,
+    dnsRequirements: dnsReq
+  };
 }
 
 export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
@@ -227,8 +272,8 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
   let contact = params.get("contact") || params.get("p") || params.get("name");
   let isFromSlug = false;
   
-  // 1. Detect subdomain format: demodashboard-empresa.avanttyops.com
-  if (!company && hostname.includes("demodashboard-")) {
+  // 1. Detect subdomain format: demodashboard-empresa.avanttyops.com or empresa.avanttyops.com
+  if (!company && (hostname.includes("demodashboard-") || (hostname.endsWith(".avanttyops.com") && !hostname.startsWith("demodashboard.") && !hostname.startsWith("www.")))) {
     const subPart = hostname.split(".")[0];
     const extracted = subPart.replace("demodashboard-", "").trim();
     if (extracted) {
@@ -240,7 +285,7 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
   // 2. Detect clean pathname format: /artificially or /buckingham or /worth
   if (!company && pathname && pathname !== "/" && !pathname.includes(".")) {
     const cleanPath = pathname.replace(/^\/(p\/)?/, "").replace(/\/$/, "").trim();
-    const systemRoutes = ["dashboard", "candidates", "meetings", "logs", "login", "admin", "index"];
+    const systemRoutes = ["dashboard", "candidates", "meetings", "logs", "login", "admin", "index", "follow-ups", "search-candidates"];
     if (cleanPath && !systemRoutes.includes(cleanPath)) {
       isFromSlug = true;
       if (cleanPath === "artificially" || cleanPath === "fernando") {
@@ -268,7 +313,7 @@ export function parseWhiteLabelFromUrl(): WhiteLabelConfig | null {
     industry: params.get("industry") || params.get("ind") || "Executive Search & Retained Mandates",
     tagline: params.get("tagline") || params.get("tag") || "Enterprise Headhunting & Retainer Platform",
     pipelineMetric: params.get("pipeline") || params.get("pipe") || "$3.2M Pipeline • 12 Active Retainers",
-    themeColor: (params.get("color") || params.get("clr") || "emerald") as any,
+    themeColor: "emerald",
     website: params.get("website") || params.get("web") || `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
     customWelcome: params.get("welcome") || params.get("w") || `Custom Portal for ${company}`,
     isCustomized: true,
@@ -286,16 +331,25 @@ export function generateWhiteLabelUrl(
   if (typeof window === "undefined") return "";
   
   const companySlug = slugifyCompanyName(config.companyName || "client");
-  const base = "https://demodashboard.avanttyops.com";
+  
+  // Resolve base URL from current environment if available
+  let baseOrigin = "https://demodashboard.avanttyops.com";
+  if (customBaseUrl && customBaseUrl !== "null" && customBaseUrl.trim() !== "") {
+    baseOrigin = customBaseUrl.replace(/\/+$/, "");
+  } else if (typeof window !== "undefined" && window.location.origin && window.location.origin !== "null") {
+    baseOrigin = window.location.origin;
+  }
   
   if (mode === "subdomain") {
-    // Generates: https://demodashboard-empresa.avanttyops.com
-    return `https://demodashboard-${companySlug}.avanttyops.com`;
+    const isLocalhost = baseOrigin.includes("localhost") || baseOrigin.includes("127.0.0.1");
+    if (isLocalhost) {
+      return `${baseOrigin}/?company=${encodeURIComponent(config.companyName || "Client")}&subdomain=${companySlug}&client=true`;
+    }
+    return `https://${companySlug}.avanttyops.com`;
   }
 
-  if (mode === "slug" || (!config.contactName || config.contactName === "Fernando Tomé" || config.contactName === "Managing Partner")) {
-    // Generates ultra-clean path: https://demodashboard.avanttyops.com/artificially
-    return `${base}/${companySlug}`;
+  if (mode === "slug") {
+    return `${baseOrigin}/${companySlug}`;
   }
   
   const params = new URLSearchParams();
@@ -305,7 +359,7 @@ export function generateWhiteLabelUrl(
   }
   params.set("client", "true");
   
-  return `${base}/?${params.toString()}`;
+  return `${baseOrigin}/?${params.toString()}`;
 }
 
 export function getCustomizedFollowUpTemplate(config: WhiteLabelConfig): FollowUpTemplateState {
@@ -318,16 +372,16 @@ export function getCustomizedFollowUpTemplate(config: WhiteLabelConfig): FollowU
   const web = rawWeb.toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
 
   return {
-    subject: `Post-Interview Thank You & Next Placement Stages — [Interview Role] at ${company}`,
+    subject: `Executive Search Debrief & Next Placement Stages — [Interview Role] at ${company}`,
     body: `Dear [Candidate Name],
 
-Thank you for participating in our executive briefing today regarding the [Interview Role] placement with ${company}.
+Thank you for participating in our executive search briefing today regarding the [Interview Role] placement at ${company}.
 
-Our Senior Partners thoroughly enjoyed reviewing your career trajectory, leadership achievements, and domain expertise. Following today's session with [Interviewer Name], our team is synthesizing your dossier for presentation to the Client Nomination Board.
+Our Senior Partners thoroughly enjoyed reviewing your track record in enterprise scaling, P&L management, and strategic leadership. Following today's session with [Interviewer Name], our team is synthesizing your dossier for presentation to the Client Nomination and Governance Board.
 
-As a next step, our executive team will coordinate directly with you regarding next evaluation stages and debrief scheduling within 24–48 hours.
+As a next step, our executive team will coordinate directly with you regarding board-level interview debriefs and scheduling within 24–48 hours.
 
-If you have any questions in the meantime or additional materials to share, please feel free to reply directly to this email.
+Should you require any additional materials or have questions regarding the target client organization, please feel free to reach out directly.
 
 Best regards,
 The ${company} Executive Search Team
@@ -339,6 +393,53 @@ export interface FollowUpTemplateState {
   subject: string;
   body: string;
 }
+
+const INITIAL_FOLLOWUP_DISPATCHES: FollowUpDispatch[] = [
+  {
+    id: "fup-1",
+    candidateName: "Marcus Vance",
+    candidateEmail: "marcus.vance@stripe-alum.com",
+    role: "Chief Technology Officer (CTO)",
+    clientCompany: "Veloce Labs",
+    meetingId: "m-mon-1",
+    timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+    status: "sent",
+    subject: "Executive Search Debrief & Next Placement Stages — Chief Technology Officer (CTO) at Veloce Labs",
+    body: "Dear Marcus,\n\nThank you for participating in our executive search briefing today regarding the CTO placement at Veloce Labs.\n\nOur Senior Partners thoroughly enjoyed reviewing your track record in scaling global core payment rails and your $48M engineering P&L leadership. We are finalizing your executive dossier for Veloce Labs Board of Directors.\n\nAs authorized by the lead partner, please access the confidential board calendar scheduling link below to coordinate your final interview round:\nhttps://avantty.com/schedule/veloce-cto-board\n\nBest regards,\nThe Avantty Executive Search Partner Practice",
+    hasNextStageAuthorization: true,
+    schedulingLink: "https://avantty.com/schedule/veloce-cto-board",
+    dispatchLatencyMs: 420
+  },
+  {
+    id: "fup-2",
+    candidateName: "Elena Rostova",
+    candidateEmail: "elena.rostova@snowflake-lead.io",
+    role: "VP of Engineering",
+    clientCompany: "Nexus AI Labs",
+    meetingId: "m-mon-2",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+    status: "sent",
+    subject: "Executive Search Debrief & Next Placement Stages — VP of Engineering at Nexus AI Labs",
+    body: "Dear Elena,\n\nThank you for joining our executive briefing today regarding the VP of Engineering placement at Nexus AI Labs.\n\nYour achievements managing 130+ distributed engineers and real-time inference pipelines strongly align with the client mandate. Our executive team is presenting your dossier to the client technical committee.\n\nPlease use the link below to select your debrief window with Executive Director David Kim:\nhttps://avantty.com/schedule/nexus-vpe-debrief\n\nBest regards,\nThe Avantty Executive Search Partner Practice",
+    hasNextStageAuthorization: true,
+    schedulingLink: "https://avantty.com/schedule/nexus-vpe-debrief",
+    dispatchLatencyMs: 380
+  },
+  {
+    id: "fup-3",
+    candidateName: "Liam Chen",
+    candidateEmail: "liam.chen@aura-ciso-candidate.com",
+    role: "Chief Information Security Officer (CISO)",
+    clientCompany: "Aura Health",
+    meetingId: "m-mon-3",
+    timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+    status: "sent",
+    subject: "Executive Search Briefing Debrief — Chief Information Security Officer (CISO) at Aura Health",
+    body: "Dear Liam,\n\nThank you for participating in our briefing today regarding the CISO retained mandate at Aura Health.\n\nOur team is currently synthesizing your security governance framework and compliance track record alongside the client's board committee specifications. We will revert with debrief feedback within 24–48 hours.\n\nBest regards,\nThe Avantty Executive Search Partner Practice",
+    hasNextStageAuthorization: false,
+    dispatchLatencyMs: 460
+  }
+];
 
 interface AppDataContextType {
   // White-Label Pitch / Demo Customization
@@ -357,47 +458,60 @@ interface AppDataContextType {
   // Meetings state & recovery
   meetingsByDay: Record<WeekDay, MeetingItem[]>;
   setMeetingsByDay: React.Dispatch<React.SetStateAction<Record<WeekDay, MeetingItem[]>>>;
-  deletedMeetingsBuffer: MeetingItem[];
-  sourceMeeting: (meetingId: string, currentRole?: UserRole, selectedDay?: WeekDay) => void;
+  endedMeetingsLedger: MeetingItem[];
+  deletedMeetingsBuffer: MeetingItem[]; // aliased for backward compatibility
+  endMeeting: (meetingId: string, currentRole?: UserRole, selectedDay?: WeekDay, reason?: string) => void;
+  sourceMeeting: (meetingId: string, currentRole?: UserRole, selectedDay?: WeekDay) => void; // aliased
+  reopenMeeting: (meetingId: string, currentRole?: UserRole) => boolean;
   restoreLastMeeting: (selectedDay: WeekDay) => boolean;
   restoreMeetingById: (meetingId: string, currentRole?: UserRole) => boolean;
   deleteMeetingPermanently: (meetingId: string, currentRole?: UserRole) => void;
   revertAllMeetings: (currentRole?: UserRole) => void;
 
-  // Candidates state & recovery
+  // Candidates / Mandates state & recovery
   candidateSpecs: CandidateSearchSpec[];
   setCandidateSpecs: React.Dispatch<React.SetStateAction<CandidateSearchSpec[]>>;
   deletedSpecsBuffer: CandidateSearchSpec[];
   sourceCandidateSpec: (specId: string, currentRole: UserRole) => void;
+  markMandatePlaced: (specId: string, currentRole?: UserRole) => void;
   restoreLastCandidateSpec: () => boolean;
   deleteCandidateSpecPermanently: (specId: string, currentRole?: UserRole) => void;
   revertAllCandidateSpecs: (currentRole?: UserRole) => void;
   addCandidateSpec: (spec: CandidateSearchSpec) => void;
 
-  // Templates state & recovery
+  // Follow Up Templates & Automation
   followUpTemplate: FollowUpTemplateState;
   setFollowUpTemplate: (tpl: FollowUpTemplateState) => void;
   templateBuffer: FollowUpTemplateState[];
   updateFollowUpTemplate: (newTpl: FollowUpTemplateState, currentRole: UserRole) => void;
   restoreLastFollowUpTemplate: () => boolean;
+  followUpDispatches: FollowUpDispatch[];
+  triggerInstantFollowUp: (meeting: MeetingItem) => FollowUpDispatch;
 
-  // Focused Target Selection (for Global Search direct modal opening)
+  // Focused Target Selection
   focusedMeetingId: string | null;
   setFocusedMeetingId: (id: string | null) => void;
   focusedSpecId: string | null;
   setFocusedSpecId: (id: string | null) => void;
 
-  // Security Lockout
+  // Security Lockout & Enterprise Restoration
   isSystemCritical: boolean;
   setIsSystemCritical: React.Dispatch<React.SetStateAction<boolean>>;
-  registerDeletionAction: (currentRole: UserRole) => boolean;
+  registerDeletionAction: (
+    currentRole: UserRole,
+    context?: { resourceType: "candidate_specs" | "meetings" | "followups"; resourceId: string; resourceName: string }
+  ) => boolean;
   unlockSystemCritical: (authorizingRole: UserRole) => void;
+  systemSnapshots: SystemSnapshot[];
+  restoreFromSnapshot: (snapshotId?: string, authorizingRole?: UserRole) => boolean;
+  activeSecurityIncident: CriticalSecurityIncident | null;
+  setActiveSecurityIncident: (incident: CriticalSecurityIncident | null) => void;
 }
 
 const AppDataContext = createContext<AppDataContextType | null>(null);
 
 export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { addLog } = useLogs();
+  const { addLog, addCriticalIncident, resolveCriticalIncident } = useLogs();
 
   // White-label pitch customization state
   const [whiteLabelConfig, setWhiteLabelConfig] = useState<WhiteLabelConfig>(() => {
@@ -408,7 +522,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } catch (e) {}
       return urlConfig;
     }
-    // Main domain always opens with your real company Avantty and real name Naim Ramos
     return DEFAULT_WHITE_LABEL;
   });
 
@@ -422,9 +535,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
 
     addLog({
-      category: "White-Label",
-      action: `Demo Customized for ${newConfig.companyName || whiteLabelConfig.companyName}`,
-      details: `Live white-label configuration applied. Headline: "${newConfig.tagline || whiteLabelConfig.tagline}".`,
+      category: "System",
+      action: `White-Label Branding Applied: ${newConfig.companyName || whiteLabelConfig.companyName}`,
+      details: `Applied customized client portal branding. Headline: "${newConfig.tagline || whiteLabelConfig.tagline}".`,
       level: "action",
       userRole: "CEO"
     });
@@ -437,15 +550,15 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     addLog({
-      category: "White-Label",
-      action: "Reset Demo Branding to Avantty Enterprise",
-      details: "Default agency branding and retainers restored.",
+      category: "System",
+      action: "Reset Portal Branding to Avantty Enterprise",
+      details: "Default firm branding restored.",
       level: "info",
       userRole: "CEO"
     });
   };
 
-  // 0. Team Accounts & Dynamic Role Permissions State
+  // Team Accounts & Dynamic Role Permissions State
   const [teamAccounts, setTeamAccounts] = useState<TeamAccount[]>(() => {
     return getDynamicTeamAccounts(whiteLabelConfig);
   });
@@ -466,9 +579,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             Sourcer: Array.isArray(parsed.Sourcer) && parsed.Sourcer.length > 0 ? parsed.Sourcer : INITIAL_ROLE_PERMISSIONS.Sourcer,
           };
         }
-      } catch (e) {
-        // fallback
-      }
+      } catch (e) {}
     }
     return INITIAL_ROLE_PERMISSIONS;
   });
@@ -483,8 +594,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const targetAccount = teamAccounts.find((a) => a.id === accountId);
     addLog({
       category: "Role & Auth",
-      action: `Updated User Rank: ${targetAccount?.name || accountId} → ${newRole}`,
-      details: `Rank adjusted by ${requestingRole}. User now operates under ${newRole} permission profile.`,
+      action: `Updated User Role: ${targetAccount?.name || accountId} → ${newRole}`,
+      details: `Permissions modified by ${requestingRole}. User now operates under ${newRole} role profile.`,
       level: "action",
       userRole: requestingRole
     });
@@ -499,7 +610,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     addLog({
       category: "Role & Auth",
-      action: `Updated Real-Time Permissions for Rank: ${role}`,
+      action: `Updated Module Permissions for ${role}`,
       details: `Visible sections modified to: [${allowedPages.join(", ")}] by ${requestingRole}`,
       level: "action",
       userRole: requestingRole
@@ -508,47 +619,147 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // 1. Meetings State
   const [meetingsByDay, setMeetingsByDay] = useState<Record<WeekDay, MeetingItem[]>>(INITIAL_MEETINGS_BY_DAY);
-  const [deletedMeetingsBuffer, setDeletedMeetingsBuffer] = useState<MeetingItem[]>([]);
+  const [endedMeetingsLedger, setEndedMeetingsLedger] = useState<MeetingItem[]>([]);
 
-  // 2. Candidates State
+  // 2. Candidate Mandates State
   const [candidateSpecs, setCandidateSpecs] = useState<CandidateSearchSpec[]>(INITIAL_CANDIDATE_SPECS);
   const [deletedSpecsBuffer, setDeletedSpecsBuffer] = useState<CandidateSearchSpec[]>([]);
 
-  // 3. Follow Up Template State
+  // 3. Follow Up Template State & Instant Dispatches
   const [followUpTemplate, setFollowUpTemplate] = useState<FollowUpTemplateState>(() => ({
     subject: localStorage.getItem("avantty_followup_template_subject") || DEFAULT_FOLLOWUP_SUBJECT,
     body: localStorage.getItem("avantty_followup_template_body") || DEFAULT_FOLLOWUP_BODY,
   }));
   const [templateBuffer, setTemplateBuffer] = useState<FollowUpTemplateState[]>([]);
+  const [followUpDispatches, setFollowUpDispatches] = useState<FollowUpDispatch[]>(INITIAL_FOLLOWUP_DISPATCHES);
 
   // 4. Focused Target from Global Search
   const [focusedMeetingId, setFocusedMeetingId] = useState<string | null>(null);
   const [focusedSpecId, setFocusedSpecId] = useState<string | null>(null);
 
-  // 5. Security Lockout State
+  // 5. Security Lockout & Enterprise Restoration State
   const [isSystemCritical, setIsSystemCritical] = useState<boolean>(false);
   const [deletionTimestamps, setDeletionTimestamps] = useState<number[]>([]);
+  const [systemSnapshots, setSystemSnapshots] = useState<SystemSnapshot[]>([]);
+  const [activeSecurityIncident, setActiveSecurityIncident] = useState<CriticalSecurityIncident | null>(null);
 
-  // Register deletion for non-CEO role (3 deletions in < 10 sec limit)
-  const registerDeletionAction = (currentRole: UserRole): boolean => {
-    if (currentRole === "CEO") {
-      return false; // CEO is exempt from limits
+  // Instant Post-Interview Follow-Up Trigger (Dispatched upon Meeting Ended)
+  const triggerInstantFollowUp = (meeting: MeetingItem): FollowUpDispatch => {
+    // Check if dispatch already exists for idempotency
+    const existing = followUpDispatches.find((d) => d.meetingId === meeting.id);
+    if (existing) return existing;
+
+    const hasNextStageAuth = Boolean(
+      meeting.placementVerdict?.toLowerCase().includes("recommend") ||
+      meeting.executiveFitScore?.includes("9")
+    );
+
+    const comp = whiteLabelConfig.isCustomized ? whiteLabelConfig.companyName : "Avantty";
+    const candidateSlug = meeting.candidate.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const candidateEmail = `${candidateSlug}@executive-network.com`;
+
+    let emailSubject = `Executive Search Debrief & Next Placement Stages — ${meeting.role} at ${meeting.clientCompany}`;
+    let emailBody = `Dear ${meeting.candidate},
+
+Thank you for participating in our executive search briefing today regarding the ${meeting.role} placement at ${meeting.clientCompany}.
+
+Our Senior Partners thoroughly enjoyed reviewing your track record in enterprise scaling, executive leadership, and strategic execution. Following today's session with ${meeting.interviewer}, our team is synthesizing your dossier for presentation to the Client Nomination and Governance Board.`;
+
+    if (hasNextStageAuth) {
+      emailBody += `\n\nAs authorized by the lead partner, please access your confidential scheduling link below to book your final board evaluation round:\nhttps://avantty.com/schedule/${meeting.id}\n\nWe look forward to advancing your candidacy.`;
+    } else {
+      emailBody += `\n\nOur Senior Partner team will coordinate directly with you regarding evaluation milestones and next steps within 24–48 hours.\n\nShould you have any questions in the meantime, please feel free to reply directly to this communication.`;
     }
 
+    emailBody += `\n\nBest regards,\nThe ${comp} Executive Search Partner Practice\nhttps://avantty.com`;
+
+    const newDispatch: FollowUpDispatch = {
+      id: `disp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      candidateName: meeting.candidate,
+      candidateEmail,
+      role: meeting.role,
+      clientCompany: meeting.clientCompany,
+      meetingId: meeting.id,
+      timestamp: new Date().toISOString(),
+      status: "sent",
+      subject: emailSubject,
+      body: emailBody,
+      hasNextStageAuthorization: hasNextStageAuth,
+      schedulingLink: hasNextStageAuth ? `https://avantty.com/schedule/${meeting.id}` : undefined,
+      dispatchLatencyMs: 340
+    };
+
+    setFollowUpDispatches((prev) => [newDispatch, ...prev]);
+
+    addLog({
+      category: "Follow Ups",
+      action: `Instant Follow-Up Sent: ${meeting.candidate}`,
+      details: `Automated post-interview dispatch executed for ${meeting.candidate} (${meeting.role} at ${meeting.clientCompany}). Authorization: ${hasNextStageAuth ? "Next Stage Approved" : "Pending Governance Review"}.`,
+      level: "success",
+      userRole: "CEO"
+    });
+
+    return newDispatch;
+  };
+
+  // Register deletion & evaluate mass-deletion security threshold
+  const registerDeletionAction = (
+    currentRole: UserRole,
+    context?: { resourceType: "candidate_specs" | "meetings" | "followups"; resourceId: string; resourceName: string }
+  ): boolean => {
     const now = Date.now();
     const recent = deletionTimestamps.filter((t) => now - t < 10000);
     const updated = [...recent, now];
     setDeletionTimestamps(updated);
 
-    if (updated.length > 3) {
-      setIsSystemCritical(true);
-      addLog({
-        category: "System",
-        action: "CRITICAL LOCKOUT: Deletion Threshold Exceeded",
-        details: `Role ${currentRole} executed ${updated.length} deletions in <10 seconds. Access temporarily suspended awaiting CEO authorization.`,
-        level: "warning",
-        userRole: currentRole,
+    // If 3 or more deletions occur within 10 seconds, trigger Mass Deletion Alert
+    if (updated.length >= 3) {
+      // Capture immutable snapshot prior to data loss
+      const snapshot: SystemSnapshot = {
+        id: `snap-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        description: `Pre-Incident Snapshot before Mass Deletion by ${currentRole}`,
+        itemCount: {
+          meetings: Object.values(meetingsByDay).flat().length,
+          specs: candidateSpecs.length,
+          dispatches: followUpDispatches.length
+        },
+        data: {
+          meetingsByDay: JSON.parse(JSON.stringify(meetingsByDay)),
+          candidateSpecs: JSON.parse(JSON.stringify(candidateSpecs)),
+          followUpDispatches: JSON.parse(JSON.stringify(followUpDispatches))
+        }
+      };
+
+      setSystemSnapshots((prev) => [snapshot, ...prev]);
+
+      const incident = addCriticalIncident({
+        initiatedBy: {
+          name: MOCK_USERS[currentRole]?.name || currentRole,
+          email: MOCK_USERS[currentRole]?.email || `${currentRole.toLowerCase()}@avanttyops.com`,
+          role: currentRole
+        },
+        severity: "CRITICAL",
+        eventType: "MASS_DELETION_ATTEMPT",
+        description: `High-velocity deletion threshold exceeded: ${updated.length} resources targeted in < 10.0 seconds. Mutation rights suspended awaiting CEO authorization.`,
+        affectedResources: {
+          resourceType: context?.resourceType || "candidate_specs",
+          count: updated.length,
+          resourceIds: context?.resourceId ? [context.resourceId] : [],
+          resourceNames: context?.resourceName ? [context.resourceName] : []
+        },
+        technicalMetadata: {
+          ipSubnetMasked: "192.168.1.xxx (Masked)",
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "Enterprise Browser",
+          requestPath: typeof window !== "undefined" ? window.location.pathname : "/app",
+          actionVelocity: `${updated.length} actions in < 10.0s`
+        },
+        snapshotAvailable: true,
+        snapshotId: snapshot.id
       });
+
+      setActiveSecurityIncident(incident);
+      setIsSystemCritical(true);
       return true;
     }
     return false;
@@ -558,18 +769,72 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsSystemCritical(false);
     setDeletionTimestamps([]);
     addLog({
-      category: "System",
-      action: "System Critical Lockout Authorized & Lifted",
-      details: `CEO authorization granted by ${authorizingRole}. Operational dashboard resumed.`,
+      category: "Security & Audit",
+      action: "System Critical Lockout Lifted",
+      details: `CEO authorization granted by ${authorizingRole}. System unlocked.`,
       level: "success",
       userRole: authorizingRole,
     });
   };
 
-  // Meeting actions & restore
-  const sourceMeeting = (meetingId: string, currentRole: UserRole = "CEO", selectedDay?: WeekDay) => {
-    const isLockout = registerDeletionAction(currentRole);
+  const restoreFromSnapshot = (snapshotId?: string, authorizingRole: UserRole = "CEO"): boolean => {
+    if (authorizingRole !== "CEO") {
+      addLog({
+        category: "Security & Audit",
+        action: "Unauthorized System Restore Blocked",
+        details: `Non-CEO rank (${authorizingRole}) attempted snapshot rollback.`,
+        level: "warning",
+        userRole: authorizingRole
+      });
+      return false;
+    }
+
+    const targetSnapshot = snapshotId
+      ? systemSnapshots.find((s) => s.id === snapshotId)
+      : systemSnapshots[0];
+
+    if (!targetSnapshot) return false;
+
+    setMeetingsByDay(targetSnapshot.data.meetingsByDay);
+    setCandidateSpecs(targetSnapshot.data.candidateSpecs);
+    setFollowUpDispatches(targetSnapshot.data.followUpDispatches);
+    setIsSystemCritical(false);
+    setDeletionTimestamps([]);
+
+    if (activeSecurityIncident) {
+      resolveCriticalIncident(activeSecurityIncident.id, authorizingRole, "RESTORED");
+      setActiveSecurityIncident(null);
+    }
+
+    addLog({
+      category: "Security & Audit",
+      action: "CEO Authorized System Snapshot Rollback",
+      details: `Restored ${targetSnapshot.itemCount.specs} Mandates, ${targetSnapshot.itemCount.meetings} Scheduled Meetings from snapshot ${targetSnapshot.id}.`,
+      level: "success",
+      userRole: "CEO"
+    });
+
+    return true;
+  };
+
+  // Meeting ending & lifecycle management (Ended status, NO "Finded")
+  const endMeeting = (
+    meetingId: string, 
+    currentRole: UserRole = "CEO", 
+    selectedDay?: WeekDay,
+    reason: string = "manual"
+  ) => {
+    const isLockout = registerDeletionAction(currentRole, {
+      resourceType: "meetings",
+      resourceId: meetingId,
+      resourceName: "Meeting Session"
+    });
     if (isLockout) return;
+
+    // Idempotency check: verify meeting is not already ended
+    if (endedMeetingsLedger.some((m) => m.id === meetingId)) {
+      return;
+    }
 
     let foundDay: WeekDay | null = selectedDay || null;
     let target: MeetingItem | undefined;
@@ -590,103 +855,112 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (!target || !foundDay) return;
 
-    const sourcedItem: MeetingItem = {
+    const endedItem: MeetingItem = {
       ...target,
       day: foundDay,
-      status: "sourced"
+      status: "completed",
+      botStatus: "completed"
     };
 
-    setDeletedMeetingsBuffer((prev) => [sourcedItem, ...prev.filter((m) => m.id !== meetingId)]);
+    setEndedMeetingsLedger((prev) => [endedItem, ...prev.filter((m) => m.id !== meetingId)]);
     setMeetingsByDay((prev) => ({
       ...prev,
       [foundDay!]: (prev[foundDay!] || []).filter((m) => m.id !== meetingId),
     }));
 
     addLog({
-      category: "Meeting Bot",
-      action: `Meeting Candidate Marked as Finded: ${target.candidate}`,
+      category: "Meetings",
+      action: `Meeting Ended: ${target.candidate}`,
       details: JSON.stringify({
         timestamp: new Date().toISOString(),
-        action: "MARK_AS_FINDED",
-        meetingId: target.id,
+        status: "Ended",
         candidate: target.candidate,
         role: target.role,
         company: target.clientCompany,
-        day: foundDay
+        day: foundDay,
+        reason
       }, null, 2),
       level: "action",
       userRole: currentRole,
     });
+
+    // Trigger Instant Post-Interview Follow-Up
+    triggerInstantFollowUp(endedItem);
   };
 
-  const restoreLastMeeting = (selectedDay: WeekDay): boolean => {
-    if (deletedMeetingsBuffer.length === 0) return false;
-    const [lastItem, ...remainingBuffer] = deletedMeetingsBuffer;
-    setDeletedMeetingsBuffer(remainingBuffer);
-
-    const targetDay = lastItem.day || selectedDay;
-    const restoredMeeting: MeetingItem = {
-      ...lastItem,
-      status: lastItem.status === "sourced" ? "completed" : lastItem.status
-    };
-
-    setMeetingsByDay((prev) => ({
-      ...prev,
-      [targetDay]: [restoredMeeting, ...(prev[targetDay] || [])],
-    }));
-
-    addLog({
-      category: "Meeting Bot",
-      action: `Restored Last Meeting Action: ${lastItem.candidate}`,
-      details: `Recovered ${lastItem.candidate} (${lastItem.role}) back to ${targetDay} meeting queue.`,
-      level: "success",
-    });
-
-    return true;
-  };
-
-  const restoreMeetingById = (meetingId: string, currentRole: UserRole = "CEO"): boolean => {
-    const target = deletedMeetingsBuffer.find((m) => m.id === meetingId);
+  const reopenMeeting = (meetingId: string, currentRole: UserRole = "CEO"): boolean => {
+    const target = endedMeetingsLedger.find((m) => m.id === meetingId);
     if (!target) return false;
 
-    setDeletedMeetingsBuffer((prev) => prev.filter((m) => m.id !== meetingId));
+    setEndedMeetingsLedger((prev) => prev.filter((m) => m.id !== meetingId));
     const targetDay = target.day || "Monday";
-    const restoredMeeting: MeetingItem = {
+    const reopened: MeetingItem = {
       ...target,
-      status: "completed"
+      status: "upcoming",
+      botStatus: "ready"
     };
 
     setMeetingsByDay((prev) => ({
       ...prev,
-      [targetDay]: [restoredMeeting, ...(prev[targetDay] || [])],
+      [targetDay]: [reopened, ...(prev[targetDay] || [])],
     }));
 
     addLog({
-      category: "Meeting Bot",
-      action: `Reverted Meeting Finded Action: ${target.candidate}`,
-      details: `Reverted ${target.candidate} (${target.role}) back to active ${targetDay} schedule.`,
-      level: "success",
+      category: "Meetings",
+      action: `Meeting Reopened to Schedule: ${target.candidate}`,
+      details: `Returned interview session with ${target.candidate} (${target.role}) to active ${targetDay} schedule.`,
+      level: "info",
       userRole: currentRole,
     });
 
     return true;
   };
 
+  const restoreLastMeeting = (selectedDay: WeekDay): boolean => {
+    if (endedMeetingsLedger.length === 0) return false;
+    const [lastItem] = endedMeetingsLedger;
+    return reopenMeeting(lastItem.id, "CEO");
+  };
+
   const deleteMeetingPermanently = (meetingId: string, currentRole: UserRole = "CEO") => {
-    const target = deletedMeetingsBuffer.find((m) => m.id === meetingId);
-    setDeletedMeetingsBuffer((prev) => prev.filter((m) => m.id !== meetingId));
+    const target = endedMeetingsLedger.find((m) => m.id === meetingId);
+    setEndedMeetingsLedger((prev) => prev.filter((m) => m.id !== meetingId));
     addLog({
-      category: "Meeting Bot",
-      action: `Permanently Deleted Meeting Log: ${target?.candidate || meetingId}`,
-      details: `Meeting record for ${target?.candidate || meetingId} permanently removed from ledger archive.`,
+      category: "Meetings",
+      action: `Permanently Archived Meeting: ${target?.candidate || meetingId}`,
+      details: `Meeting record permanently archived from active review.`,
       level: "warning",
       userRole: currentRole,
     });
   };
 
-  // Candidate Specs actions & restore
+  const revertAllMeetings = (currentRole: UserRole = "CEO") => {
+    if (endedMeetingsLedger.length === 0) return;
+    const count = endedMeetingsLedger.length;
+    endedMeetingsLedger.forEach((m) => {
+      const d = m.day || "Monday";
+      setMeetingsByDay((prev) => ({
+        ...prev,
+        [d]: [{ ...m, status: "upcoming", botStatus: "ready" }, ...(prev[d] || [])]
+      }));
+    });
+    setEndedMeetingsLedger([]);
+    addLog({
+      category: "Meetings",
+      action: `Restored All Ended Meetings to Schedule (${count})`,
+      details: `Restored ${count} meetings back to active schedule.`,
+      level: "success",
+      userRole: currentRole
+    });
+  };
+
+  // Candidate Mandates actions (Placed / Filled, NO "Finded")
   const sourceCandidateSpec = (specId: string, currentRole: UserRole) => {
-    const isLockout = registerDeletionAction(currentRole);
+    const isLockout = registerDeletionAction(currentRole, {
+      resourceType: "candidate_specs",
+      resourceId: specId,
+      resourceName: "Candidate Spec"
+    });
     if (isLockout) return;
 
     const targetSpec = candidateSpecs.find((s) => s.id === specId);
@@ -696,18 +970,30 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCandidateSpecs((prev) => prev.filter((s) => s.id !== specId));
 
     addLog({
-      category: "Candidate Spec",
-      action: `Candidate Spec Marked as Finded: ${targetSpec.code}`,
-      details: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        action: "MARK_AS_FINDED",
-        candidateSpecId: targetSpec.id,
-        code: targetSpec.code,
-        roleTitle: targetSpec.roleTitle,
-        company: targetSpec.company,
-      }, null, 2),
+      category: "Search Mandates",
+      action: `Search Mandate Archived: ${targetSpec.code}`,
+      details: `Archived search specification for ${targetSpec.roleTitle} at ${targetSpec.company}.`,
       level: "action",
       userRole: currentRole,
+    });
+  };
+
+  const markMandatePlaced = (specId: string, currentRole: UserRole = "CEO") => {
+    setCandidateSpecs((prev) =>
+      prev.map((s) =>
+        s.id === specId
+          ? { ...s, stage: "placed", status: "Searching" as any }
+          : s
+      )
+    );
+
+    const target = candidateSpecs.find((s) => s.id === specId);
+    addLog({
+      category: "Search Mandates",
+      action: `Mandate Successfully Placed: ${target?.roleTitle || specId}`,
+      details: `Placement closed for ${target?.company}. Placement fee recognized in Placed Revenue.`,
+      level: "success",
+      userRole: currentRole
     });
   };
 
@@ -715,13 +1001,12 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (deletedSpecsBuffer.length === 0) return false;
     const [lastSpec, ...remainingBuffer] = deletedSpecsBuffer;
     setDeletedSpecsBuffer(remainingBuffer);
-
     setCandidateSpecs((prev) => [lastSpec, ...prev]);
 
     addLog({
-      category: "Candidate Spec",
-      action: `Restored Candidate Spec: ${lastSpec.code}`,
-      details: `Restored ${lastSpec.code} (${lastSpec.roleTitle} at ${lastSpec.company}) to active candidates.`,
+      category: "Search Mandates",
+      action: `Restored Mandate: ${lastSpec.code}`,
+      details: `Returned ${lastSpec.roleTitle} (${lastSpec.company}) to active search portfolio.`,
       level: "success",
     });
 
@@ -729,83 +1014,36 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteCandidateSpecPermanently = (specId: string, currentRole: UserRole = "CEO") => {
-    const target = deletedSpecsBuffer.find((s) => s.id === specId);
+    const isLockout = registerDeletionAction(currentRole, {
+      resourceType: "candidate_specs",
+      resourceId: specId,
+      resourceName: "Candidate Spec"
+    });
+    if (isLockout) return;
+
+    const target = candidateSpecs.find((s) => s.id === specId) || deletedSpecsBuffer.find((s) => s.id === specId);
+    setCandidateSpecs((prev) => prev.filter((s) => s.id !== specId));
     setDeletedSpecsBuffer((prev) => prev.filter((s) => s.id !== specId));
+
     addLog({
-      category: "Candidate Spec",
-      action: `Permanently Deleted Candidate Spec: ${target?.code || specId}`,
-      details: `Candidate specification for ${target?.code || specId} permanently removed from archive.`,
+      category: "Search Mandates",
+      action: `Permanently Removed Mandate Spec: ${target?.code || specId}`,
+      details: `Specification for ${target?.roleTitle || specId} removed by ${currentRole}.`,
       level: "warning",
       userRole: currentRole,
     });
   };
 
-  const revertAllMeetings = (currentRole: UserRole = "CEO") => {
-    if (deletedMeetingsBuffer.length === 0) return;
-    const count = deletedMeetingsBuffer.length;
-
-    setMeetingsByDay((prev) => {
-      const updated = { ...prev };
-      deletedMeetingsBuffer.forEach((item) => {
-        const targetDay = item.day || "Monday";
-        const restored: MeetingItem = {
-          ...item,
-          status: "completed"
-        };
-        updated[targetDay] = [restored, ...(updated[targetDay] || [])];
-      });
-      return updated;
-    });
-
-    setDeletedMeetingsBuffer([]);
-
-    addLog({
-      category: "Meeting Bot",
-      action: `Reverted All Archived Meetings (${count} Items)`,
-      details: `Restored all ${count} archived meeting records back to their active weekday interview schedules.`,
-      level: "success",
-      userRole: currentRole
-    });
-  };
-
   const revertAllCandidateSpecs = (currentRole: UserRole = "CEO") => {
-    const countBuffer = deletedSpecsBuffer.length;
-
-    setCandidateSpecs((prev) => {
-      const restoredFromFinded = prev.map((spec) => {
-        if (spec.status === "Finded") {
-          return {
-            ...spec,
-            status: "Searching" as const,
-            profileLogs: [
-              {
-                id: `log-${Date.now()}-${Math.random()}`,
-                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                action: "Batch Revert: Restored to Searching",
-                details: "Restored to active candidate sourcing queue via Revert All action.",
-                type: "status_change" as const
-              },
-              ...(spec.profileLogs || [])
-            ]
-          };
-        }
-        return spec;
-      });
-
-      const restoredFromBuffer: CandidateSearchSpec[] = deletedSpecsBuffer.map((spec) => ({
-        ...spec,
-        status: "Searching" as const
-      }));
-
-      return [...restoredFromBuffer, ...restoredFromFinded];
-    });
-
+    if (deletedSpecsBuffer.length === 0) return;
+    const count = deletedSpecsBuffer.length;
+    setCandidateSpecs((prev) => [...deletedSpecsBuffer, ...prev]);
     setDeletedSpecsBuffer([]);
 
     addLog({
-      category: "Candidate Spec",
-      action: "Reverted All Candidate Profiles to Searching",
-      details: `Batch restored all sourced/finded candidate specifications back to active hunting status.`,
+      category: "Search Mandates",
+      action: `Restored All Archived Mandates (${count})`,
+      details: `Batch restored ${count} search specifications back to active status.`,
       level: "success",
       userRole: currentRole
     });
@@ -825,7 +1063,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const restoreLastFollowUpTemplate = (): boolean => {
     if (templateBuffer.length === 0) {
-      // Fallback reset to default template
       const defaultTpl = { subject: DEFAULT_FOLLOWUP_SUBJECT, body: DEFAULT_FOLLOWUP_BODY };
       setFollowUpTemplate(defaultTpl);
       localStorage.setItem("avantty_followup_template_subject", DEFAULT_FOLLOWUP_SUBJECT);
@@ -833,7 +1070,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addLog({
         category: "Follow Ups",
         action: "Restored Default Follow-Up Template",
-        details: "Reset follow-up template to initial corporate standard.",
+        details: "Reset template to standard Avantty practice wording.",
         level: "info",
       });
       return true;
@@ -848,7 +1085,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addLog({
       category: "Follow Ups",
       action: "Restored Previous Follow-Up Template",
-      details: "Recovered prior follow-up template version from buffer.",
+      details: "Recovered prior follow-up template version.",
       level: "success",
     });
 
@@ -869,16 +1106,20 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateRolePermissions,
         meetingsByDay,
         setMeetingsByDay,
-        deletedMeetingsBuffer,
-        sourceMeeting,
+        endedMeetingsLedger,
+        deletedMeetingsBuffer: endedMeetingsLedger, // backward-compat alias
+        endMeeting,
+        sourceMeeting: endMeeting, // backward-compat alias
+        reopenMeeting,
         restoreLastMeeting,
-        restoreMeetingById,
+        restoreMeetingById: reopenMeeting, // backward-compat alias
         deleteMeetingPermanently,
         revertAllMeetings,
         candidateSpecs,
         setCandidateSpecs,
         deletedSpecsBuffer,
         sourceCandidateSpec,
+        markMandatePlaced,
         restoreLastCandidateSpec,
         deleteCandidateSpecPermanently,
         revertAllCandidateSpecs,
@@ -888,6 +1129,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         templateBuffer,
         updateFollowUpTemplate,
         restoreLastFollowUpTemplate,
+        followUpDispatches,
+        triggerInstantFollowUp,
         focusedMeetingId,
         setFocusedMeetingId,
         focusedSpecId,
@@ -896,6 +1139,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setIsSystemCritical,
         registerDeletionAction,
         unlockSystemCritical,
+        systemSnapshots,
+        restoreFromSnapshot,
+        activeSecurityIncident,
+        setActiveSecurityIncident
       }}
     >
       {children}

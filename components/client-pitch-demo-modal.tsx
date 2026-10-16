@@ -1,7 +1,14 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useAppData, WhiteLabelConfig, DEFAULT_WHITE_LABEL, generateWhiteLabelUrl, slugifyCompanyName } from "@/src/app-data-context";
+import {
+  useAppData,
+  WhiteLabelConfig,
+  DEFAULT_WHITE_LABEL,
+  generateWhiteLabelUrl,
+  slugifyCompanyName,
+  validateSubdomain
+} from "@/src/app-data-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +25,10 @@ import {
   TrendingUp, 
   Palette, 
   Zap, 
-  Share2,
-  CheckCircle2
+  CheckCircle2,
+  ExternalLink,
+  AlertCircle,
+  ShieldCheck
 } from "lucide-react";
 
 interface PresetItem {
@@ -53,7 +62,7 @@ const PRESETS: PresetItem[] = [
       industry: "AI Leadership & High-Growth Tech Search",
       tagline: "Executive Tech Recruitment Intelligence Engine",
       pipelineMetric: "$2.9M Pipeline • 11 Active Mandates",
-      themeColor: "indigo",
+      themeColor: "emerald",
       website: "worthsearch.com",
       customWelcome: "Prepared exclusively for Nolan Greenberg @ Worth Search",
       isCustomized: true
@@ -68,7 +77,7 @@ const PRESETS: PresetItem[] = [
       industry: "Biotech & Life Sciences Executive Search",
       tagline: "Life Sciences Partner & C-Suite Placement Portal",
       pipelineMetric: "$4.1M Pipeline • 18 Biotech Mandates",
-      themeColor: "blue",
+      themeColor: "emerald",
       website: "sci.bio",
       customWelcome: "Prepared exclusively for Eric Celidonio @ Sci.bio",
       isCustomized: true
@@ -83,7 +92,7 @@ const PRESETS: PresetItem[] = [
       industry: "Real Estate & Global Financial Leadership",
       tagline: "Executive Retained Practice & Partner Dossier",
       pipelineMetric: "$5.2M Pipeline • 21 Global Retainers",
-      themeColor: "amber",
+      themeColor: "emerald",
       website: "rhodesassociates.com",
       customWelcome: "Prepared exclusively for Steven Littman @ Rhodes Associates",
       isCustomized: true
@@ -98,21 +107,12 @@ const PRESETS: PresetItem[] = [
       industry: "Executive Talent & High-Value Headhunting",
       tagline: "Retained Search & Executive Placement Hub",
       pipelineMetric: "$2.6M Pipeline • 12 Active Searches",
-      themeColor: "purple",
+      themeColor: "emerald",
       website: "privatelabelstaffing.com",
       customWelcome: "Prepared exclusively for Amanda Mihnovich @ Private Label Staff",
       isCustomized: true
     }
   }
-];
-
-const THEME_COLORS: { id: WhiteLabelConfig["themeColor"]; label: string; bgClass: string }[] = [
-  { id: "emerald", label: "Emerald Growth", bgClass: "bg-emerald-500" },
-  { id: "blue", label: "Sapphire Blue", bgClass: "bg-blue-500" },
-  { id: "indigo", label: "Silicon Indigo", bgClass: "bg-indigo-500" },
-  { id: "amber", label: "Gold / Amber", bgClass: "bg-amber-500" },
-  { id: "rose", label: "Ruby Rose", bgClass: "bg-rose-500" },
-  { id: "purple", label: "Royal Purple", bgClass: "bg-purple-500" },
 ];
 
 export function ClientPitchDemoModal() {
@@ -129,7 +129,7 @@ export function ClientPitchDemoModal() {
   const [appliedNotification, setAppliedNotification] = useState(false);
   const [linkMode, setLinkMode] = useState<"slug" | "subdomain" | "query">("slug");
   const [customDomain, setCustomDomain] = useState<string>(() => {
-    if (typeof window !== "undefined" && window.location.origin !== "null") {
+    if (typeof window !== "undefined" && window.location.origin && window.location.origin !== "null") {
       return window.location.origin;
     }
     return "https://demodashboard.avanttyops.com";
@@ -142,7 +142,7 @@ export function ClientPitchDemoModal() {
       setFormData(whiteLabelConfig);
       setCopied(false);
       setAppliedNotification(false);
-      if (typeof window !== "undefined" && window.location.origin !== "null") {
+      if (typeof window !== "undefined" && window.location.origin && window.location.origin !== "null") {
         setCustomDomain(window.location.origin);
       }
     }
@@ -150,7 +150,11 @@ export function ClientPitchDemoModal() {
 
   if (!isDemoModalOpen) return null;
 
+  const subdomainValidation = validateSubdomain(formData.companyName || "client");
   const generatedUrl = generateWhiteLabelUrl(formData, customDomain, linkMode);
+
+  // Fallback testable link that works immediately in current environment
+  const immediateTestingUrl = generateWhiteLabelUrl(formData, customDomain, "query");
 
   const handleApplyPreset = (preset: PresetItem) => {
     setFormData((prev) => ({
@@ -166,7 +170,7 @@ export function ClientPitchDemoModal() {
     setTimeout(() => {
       setAppliedNotification(false);
       setIsDemoModalOpen(false);
-    }, 800);
+    }, 600);
   };
 
   const handleCopyLink = async () => {
@@ -189,7 +193,7 @@ export function ClientPitchDemoModal() {
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overscroll-contain">
         <div 
-          className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs transition-opacity"
+          className="fixed inset-0 bg-[#080B0A]/75 backdrop-blur-xs transition-opacity"
           onClick={() => setIsDemoModalOpen(false)}
         />
         
@@ -198,30 +202,30 @@ export function ClientPitchDemoModal() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 8 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+          className="relative w-full max-w-2xl rounded-2xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-foreground font-sans"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-secondary/40">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00875A]/10 text-[#00875A] border border-[#00875A]/25">
                 <Sparkles className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <span>Generador de Enlace Limpio & White-Label Pitch</span>
-                  <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
-                    Auto-Config
+                <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                  <span>Custom Client Pitch & White-Label Link Generator</span>
+                  <Badge variant="outline" className="text-[10px] bg-[#00875A]/10 text-[#00875A] border-[#00875A]/30">
+                    Live Engine
                   </Badge>
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Crea enlaces directos personalizados con la marca y dominio de tu cliente
+                <p className="text-xs text-muted-foreground">
+                  Generate customized partner-branded portal links for prospective executive clients
                 </p>
               </div>
             </div>
             
             <button
               onClick={() => setIsDemoModalOpen(false)}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -231,17 +235,17 @@ export function ClientPitchDemoModal() {
             {/* Quick 1-Click Presets */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <Zap className="h-3.5 w-3.5 text-amber-500" />
-                  Plantillas Rápidas de Clientes Reales
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Zap className="h-3.5 w-3.5 text-[#00875A]" />
+                  Verified Executive Search Client Presets
                 </label>
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   <RotateCcw className="h-3 w-3" />
-                  <span>Restablecer Avantty</span>
+                  <span>Restore Avantty Standard</span>
                 </button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -250,14 +254,14 @@ export function ClientPitchDemoModal() {
                     key={preset.name}
                     type="button"
                     onClick={() => handleApplyPreset(preset)}
-                    className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 text-left transition-all group cursor-pointer"
+                    className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:bg-secondary hover:border-foreground/30 text-left transition-all group cursor-pointer"
                   >
                     <span className="text-base">{preset.icon}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                      <p className="text-xs font-semibold text-foreground truncate group-hover:text-[#00875A]">
                         {preset.name}
                       </p>
-                      <p className="text-[10px] text-slate-500 truncate">
+                      <p className="text-[10px] text-muted-foreground truncate">
                         {preset.config.contactName}
                       </p>
                     </div>
@@ -267,157 +271,188 @@ export function ClientPitchDemoModal() {
             </div>
 
             {/* Custom Brand Details */}
-            <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="space-y-4 pt-2 border-t border-border">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-slate-500" />
-                    Nombre de Empresa Cliente
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    Client Search Firm Name
                   </label>
                   <Input
                     value={formData.companyName}
                     onChange={(e) => setFormData({ ...formData, companyName: e.target.value, isCustomized: true })}
-                    placeholder="Ej. Buckingham Search"
-                    className="text-xs bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                    placeholder="e.g. Buckingham Search"
+                    className="text-xs bg-background border-border"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-slate-500" />
-                    Managing Partner / Contacto
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                    Managing Partner / Recipient
                   </label>
                   <Input
                     value={formData.contactName}
                     onChange={(e) => setFormData({ ...formData, contactName: e.target.value, isCustomized: true })}
-                    placeholder="Ej. Adam Carlson"
-                    className="text-xs bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                    placeholder="e.g. Adam Carlson"
+                    className="text-xs bg-background border-border"
                   />
-                </div>
-              </div>
-
-              {/* Theme Accent Color */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Palette className="h-3.5 w-3.5 text-slate-500" />
-                  Color de Acento de la Marca
-                </label>
-                <div className="flex flex-wrap gap-2.5">
-                  {THEME_COLORS.map((tc) => (
-                    <button
-                      key={tc.id}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, themeColor: tc.id, isCustomized: true })}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
-                        formData.themeColor === tc.id
-                          ? "bg-slate-100 dark:bg-slate-800 border-slate-900 dark:border-slate-100 shadow-2xs"
-                          : "bg-transparent border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                      }`}
-                    >
-                      <span className={`h-3.5 w-3.5 rounded-full ${tc.bgClass}`} />
-                      <span>{tc.label}</span>
-                    </button>
-                  ))}
                 </div>
               </div>
             </div>
 
             {/* Clean Domain & Shareable Link Box */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/50 p-4 space-y-3">
+            <div className="rounded-xl border border-border bg-secondary/50 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5 text-emerald-500" />
-                  Formato de Enlace para el Cliente
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 text-[#00875A]" />
+                  Client Link Format Architecture
                 </label>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-                  Personalizado al 100%
+                <span className="text-[10px] text-[#00875A] font-mono font-semibold">
+                  100% Parameterized
                 </span>
               </div>
 
-              {/* Format Toggle: Ultra-Clean Route Slug vs Subdomain VIP */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Format Toggle: Ultra-Clean Route Slug vs Subdomain VIP vs Direct Query */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setLinkMode("slug")}
-                  className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                  className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
                     linkMode === "slug"
-                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white ring-1 ring-emerald-500/20"
-                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                      ? "border-[#00875A] bg-[#00875A]/10 text-foreground ring-1 ring-[#00875A]/25"
+                      : "border-border bg-card text-muted-foreground hover:border-foreground/40"
                   }`}
                 >
-                  <p className="text-xs font-bold flex items-center justify-between">
-                    <span>Enlace Ultra Clean (Slug)</span>
-                    {linkMode === "slug" && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                  <p className="text-xs font-semibold flex items-center justify-between">
+                    <span>Clean Slug Path</span>
+                    {linkMode === "slug" && <span className="h-2 w-2 rounded-full bg-[#00875A]" />}
                   </p>
-                  <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
-                    demodashboard.avanttyops.com/{slugifyCompanyName(formData.companyName)}
+                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
+                    /{slugifyCompanyName(formData.companyName)}
                   </p>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setLinkMode("subdomain")}
-                  className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                  className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
                     linkMode === "subdomain"
-                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white ring-1 ring-emerald-500/20"
-                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                      ? "border-[#00875A] bg-[#00875A]/10 text-foreground ring-1 ring-[#00875A]/25"
+                      : "border-border bg-card text-muted-foreground hover:border-foreground/40"
                   }`}
                 >
-                  <p className="text-xs font-bold flex items-center justify-between">
-                    <span>Subdominio VIP</span>
-                    {linkMode === "subdomain" && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                  <p className="text-xs font-semibold flex items-center justify-between">
+                    <span>VIP Subdomain</span>
+                    {linkMode === "subdomain" && <span className="h-2 w-2 rounded-full bg-[#00875A]" />}
                   </p>
-                  <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
-                    demodashboard-{slugifyCompanyName(formData.companyName)}.avanttyops.com
+                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
+                    {subdomainValidation.subdomain}.avanttyops.com
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setLinkMode("query")}
+                  className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
+                    linkMode === "query"
+                      ? "border-[#00875A] bg-[#00875A]/10 text-foreground ring-1 ring-[#00875A]/25"
+                      : "border-border bg-card text-muted-foreground hover:border-foreground/40"
+                  }`}
+                >
+                  <p className="text-xs font-semibold flex items-center justify-between">
+                    <span>Direct Query</span>
+                    {linkMode === "query" && <span className="h-2 w-2 rounded-full bg-[#00875A]" />}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
+                    ?company={slugifyCompanyName(formData.companyName)}
                   </p>
                 </button>
               </div>
 
-              {/* Clean Output URL with Copy Button */}
-              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center gap-2">
-                <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 font-mono text-xs text-slate-800 dark:text-slate-200 truncate select-all">
+              {/* Subdomain Technical & DNS Reality Validation */}
+              {linkMode === "subdomain" && (
+                <div className="p-3 rounded-lg bg-card border border-border text-[11px] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-foreground flex items-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5 text-[#00875A]" />
+                      Subdomain Syntax: <strong className="font-mono text-[#00875A]">{subdomainValidation.subdomain}</strong>
+                    </span>
+                    <Badge variant="outline" className={`text-[10px] ${subdomainValidation.isValid ? "text-[#00875A] border-[#00875A]/30" : "text-destructive border-destructive/30"}`}>
+                      {subdomainValidation.isValid ? "Valid RFC 1123" : "Syntax Error"}
+                    </Badge>
+                  </div>
+
+                  {subdomainValidation.error && (
+                    <p className="text-destructive font-medium">
+                      ⚠️ {subdomainValidation.error}
+                    </p>
+                  )}
+
+                  <div className="text-muted-foreground leading-relaxed pt-1 border-t border-border/60">
+                    <strong className="text-foreground">External DNS Dependency:</strong> Live wildcard subdomains (<code className="font-mono text-[10px] bg-secondary px-1 py-0.5 rounded">https://{subdomainValidation.subdomain}.avanttyops.com</code>) require a Wildcard DNS record (<code className="font-mono text-[10px] bg-secondary px-1 py-0.5 rounded">*.avanttyops.com CNAME</code>) configured in Cloudflare or your DNS host.
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 text-[11px]">
+                    <span className="text-muted-foreground">For zero-delay instant client testing:</span>
+                    <a
+                      href={immediateTestingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-semibold text-[#00875A] hover:underline"
+                    >
+                      <span>Open Instant Universal Link</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Clean Output URL with Copy and Open Button */}
+              <div className="pt-2 border-t border-border flex items-center gap-2">
+                <div className="flex-1 bg-background rounded-lg border border-border px-3 py-2 font-mono text-xs text-foreground truncate select-all">
                   {generatedUrl}
                 </div>
                 <Button
                   type="button"
                   onClick={handleCopyLink}
                   variant={copied ? "default" : "secondary"}
-                  className={`h-9 shrink-0 gap-1.5 text-xs font-bold cursor-pointer transition-all ${
-                    copied ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""
+                  className={`h-9 shrink-0 gap-1.5 text-xs font-semibold cursor-pointer transition-all ${
+                    copied ? "bg-[#00875A] hover:bg-[#006E49] text-white" : ""
                   }`}
                 >
                   {copied ? <Check className="h-3.5 w-3.5 text-white" /> : <Copy className="h-3.5 w-3.5" />}
-                  <span>{copied ? "¡Copiado!" : "Copiar Enlace"}</span>
+                  <span>{copied ? "Copied" : "Copy Link"}</span>
                 </Button>
               </div>
             </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-secondary/40">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsDemoModalOpen(false)}
-              className="text-xs text-slate-600 dark:text-slate-400 cursor-pointer"
+              className="text-xs cursor-pointer"
             >
-              Cerrar
+              Close
             </Button>
 
             <Button
               type="button"
               onClick={handleApplyToLiveDashboard}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+              className="bg-[#00875A] hover:bg-[#006E49] text-white text-xs font-semibold gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               {appliedNotification ? (
                 <>
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  <span>¡Dashboard Personalizado!</span>
+                  <span>Branding Applied!</span>
                 </>
               ) : (
                 <>
                   <Zap className="h-3.5 w-3.5" />
-                  <span>Aplicar al Dashboard Ahora</span>
+                  <span>Apply to Current Session</span>
                 </>
               )}
             </Button>

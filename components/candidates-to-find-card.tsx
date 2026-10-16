@@ -1,56 +1,16 @@
+"use client";
+
 import * as React from "react";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, ChevronRight, X, Search } from "lucide-react";
+import { Target, ChevronRight, X, Search, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
-
-interface OpenRole {
-  id: string;
-  position: string;
-  department: string;
-  targetCount: number;
-  sourcedCount: number;
-  priority: "High" | "Medium" | "Urgent";
-}
-
-const ROLES_TO_FIND: OpenRole[] = [
-  {
-    id: "r1",
-    position: "Chief Executive Officer (CEO)",
-    department: "Executive Leadership",
-    targetCount: 3,
-    sourcedCount: 2,
-    priority: "Urgent",
-  },
-  {
-    id: "r2",
-    position: "Chief Revenue Officer (CRO)",
-    department: "Executive Revenue",
-    targetCount: 4,
-    sourcedCount: 3,
-    priority: "Urgent",
-  },
-  {
-    id: "r3",
-    position: "Vice President of Engineering",
-    department: "Engineering Leadership",
-    targetCount: 5,
-    sourcedCount: 4,
-    priority: "High",
-  },
-  {
-    id: "r4",
-    position: "Chief People Officer (CPO)",
-    department: "Executive Talent",
-    targetCount: 2,
-    sourcedCount: 1,
-    priority: "Medium",
-  },
-];
+import { useAppData } from "@/src/app-data-context";
 
 export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { candidateSpecs } = useAppData();
 
   useLockBodyScroll(isOpen);
 
@@ -62,9 +22,37 @@ export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }
     }
   };
 
-  const totalNeeded = ROLES_TO_FIND.reduce((sum, role) => sum + role.targetCount, 0);
-  const totalSourced = ROLES_TO_FIND.reduce((sum, role) => sum + role.sourcedCount, 0);
-  const remainingToFind = totalNeeded - totalSourced;
+  // Reconcile live active search mandates vs placed mandates
+  const activeMandates = candidateSpecs.filter(
+    (s) => s.status !== "Placed" && s.stage !== "placed"
+  );
+  const placedMandates = candidateSpecs.filter(
+    (s) => s.status === "Placed" || s.stage === "placed"
+  );
+
+  const rolesData = activeMandates.map((s) => {
+    const targetCount = 3;
+    const sourcedCount = Math.min(
+      targetCount,
+      Math.max(1, s.qualifiedCandidatesCount || (s.stage === "board" ? 3 : s.stage === "shortlist" ? 2 : 1))
+    );
+    return {
+      id: s.id,
+      position: s.roleTitle,
+      company: s.company,
+      department: s.department || "Executive Leadership",
+      targetCount,
+      sourcedCount,
+      priority: s.priority || "Urgent",
+      boardReadinessScore: s.boardReadinessScore || 90,
+      targetSalaryNumber: s.targetSalaryNumber || 320000,
+    };
+  });
+
+  const totalNeeded = rolesData.reduce((sum, role) => sum + role.targetCount, 0);
+  const totalSourced = rolesData.reduce((sum, role) => sum + role.sourcedCount, 0);
+  const remainingToFind = Math.max(0, totalNeeded - totalSourced);
+  const progressPercentage = totalNeeded > 0 ? Math.round((totalSourced / totalNeeded) * 100) : 100;
 
   return (
     <>
@@ -83,7 +71,7 @@ export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }
               </CardTitle>
             </div>
             <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-              Target executive sourcing quotas for client mandates
+              Live executive search quotas for active mandates ({activeMandates.length} active, {placedMandates.length} placed)
             </CardDescription>
           </div>
           <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -102,37 +90,43 @@ export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }
               </span>
             </div>
             <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-              {totalSourced}/{totalNeeded} sourced ({Math.round((totalSourced / totalNeeded) * 100)}%)
+              {totalSourced}/{totalNeeded} sourced ({progressPercentage}%)
             </span>
           </div>
 
           {/* Quick Role Progress Breakdown */}
-          <div className="space-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2.5 border border-slate-200 dark:border-slate-800">
-            {ROLES_TO_FIND.slice(0, 3).map((role) => {
-              const progress = Math.round((role.sourcedCount / role.targetCount) * 100);
-              return (
-                <div key={role.id} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="truncate font-medium text-slate-900 dark:text-slate-100 max-w-[170px]">
-                      {role.position}
-                    </span>
-                    <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                      {role.sourcedCount}/{role.targetCount}
-                    </span>
+          <div className="space-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2.5 border border-slate-200 dark:border-slate-800 min-h-[90px]">
+            {rolesData.length === 0 ? (
+              <div className="flex items-center justify-center h-20 text-xs text-slate-400">
+                All client search mandates have been placed.
+              </div>
+            ) : (
+              rolesData.slice(0, 3).map((role) => {
+                const progress = Math.round((role.sourcedCount / role.targetCount) * 100);
+                return (
+                  <div key={role.id} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="truncate font-medium text-slate-900 dark:text-slate-100 max-w-[200px]">
+                        {role.position} <span className="text-slate-400 font-normal">({role.company})</span>
+                      </span>
+                      <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                        {role.sourcedCount}/{role.targetCount}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-600 dark:bg-emerald-500 rounded-full transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                    <div
-                      className="h-full bg-slate-800 dark:bg-slate-200 rounded-full transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
 
           <div className="flex items-center justify-between text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:translate-x-0.5 transition-transform">
-            <span>View active recruitment targets ({ROLES_TO_FIND.length} roles)</span>
+            <span>View active mandate targets ({activeMandates.length} open roles)</span>
             <ChevronRight className="h-4 w-4" />
           </div>
         </CardContent>
@@ -171,7 +165,7 @@ export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }
                       Executive Mandates by Role
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Current C-Suite & VP search quotas for client companies
+                      Live sync of active C-Suite & VP search quotas for client companies
                     </p>
                   </div>
                 </div>
@@ -184,7 +178,7 @@ export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }
               </div>
 
               <div className="mt-4 max-h-[60vh] space-y-3 overflow-y-auto pr-1">
-                {ROLES_TO_FIND.map((role) => {
+                {rolesData.map((role) => {
                   const progress = Math.round((role.sourcedCount / role.targetCount) * 100);
                   const needed = role.targetCount - role.sourcedCount;
 
@@ -194,9 +188,14 @@ export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }
                       className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 shadow-sm"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
-                          {role.position}
-                        </span>
+                        <div>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
+                            {role.position}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                            {role.company} • {role.department}
+                          </span>
+                        </div>
                         <span
                           className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                             role.priority === "Urgent"
@@ -210,22 +209,18 @@ export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }
                         </span>
                       </div>
 
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        Department: {role.department}
-                      </div>
-
                       <div className="mt-1 space-y-1">
                         <div className="flex justify-between text-xs font-medium">
                           <span className="text-slate-500 dark:text-slate-400">
-                            Progress: {role.sourcedCount} of {role.targetCount} sourced
+                            Progress: {role.sourcedCount} of {role.targetCount} qualified executives sourced
                           </span>
                           <span className="text-slate-900 dark:text-white font-bold">
-                            {needed > 0 ? `${needed} remaining` : "Target Reached"}
+                            {needed > 0 ? `${needed} needed` : "Target Met"}
                           </span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                           <div
-                            className="h-full bg-slate-800 dark:bg-slate-200 rounded-full"
+                            className="h-full bg-emerald-600 dark:bg-emerald-500 rounded-full"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -233,9 +228,46 @@ export function CandidatesToFindCard({ onNavigate }: { onNavigate?: () => void }
                     </div>
                   );
                 })}
+
+                {placedMandates.length > 0 && (
+                  <div className="pt-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-2">
+                      Placed & Closed Mandates ({placedMandates.length})
+                    </span>
+                    {placedMandates.map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 mb-2 text-xs"
+                      >
+                        <div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 line-through">
+                            {s.roleTitle}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {s.company} • 100% Fee Realized
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Placed
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="mt-5 flex justify-end">
+              <div className="mt-5 flex justify-end gap-2">
+                {onNavigate && (
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      onNavigate();
+                    }}
+                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Open Mandates Module
+                  </button>
+                )}
                 <button
                   onClick={() => setIsOpen(false)}
                   className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"

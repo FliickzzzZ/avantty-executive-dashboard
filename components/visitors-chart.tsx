@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 import { UserCheck, TrendingUp, Sparkles } from "lucide-react";
+import { useAppData } from "@/src/app-data-context";
 
 interface MonthlyData {
   month: string;
@@ -18,7 +19,7 @@ interface MonthlyData {
   candidates: number;
 }
 
-const chartData: MonthlyData[] = [
+const BASE_CHART_DATA: MonthlyData[] = [
   { month: "January", short: "Jan", candidates: 22 },
   { month: "February", short: "Feb", candidates: 28 },
   { month: "March", short: "Mar", candidates: 31 },
@@ -33,10 +34,23 @@ const chartData: MonthlyData[] = [
   { month: "December", short: "Dec", candidates: 46 },
 ];
 
-const closedThisMonth = chartData.find((d) => d.month === "July")?.candidates || 42;
 const monthlyTarget = 45;
 
 export function VisitorsChart() {
+  const { candidateSpecs } = useAppData();
+  const placedCount = candidateSpecs.filter((s) => s.status === "Placed" || s.stage === "placed").length;
+  
+  // Calculate dynamic live chart data with placed mandates reflected
+  const chartData = React.useMemo(() => {
+    return BASE_CHART_DATA.map((item, idx) => {
+      if (idx === 6) { // Current month (July)
+        return { ...item, candidates: 40 + placedCount };
+      }
+      return item;
+    });
+  }, [placedCount]);
+
+  const closedThisMonth = chartData[6].candidates;
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(6); // Default highlight July
 
   // Chart coordinates calculation
@@ -139,8 +153,8 @@ export function VisitorsChart() {
           >
             <defs>
               <linearGradient id="execAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10B981" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
+                <stop offset="0%" stopColor="#00875A" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#00875A" stopOpacity="0.0" />
               </linearGradient>
             </defs>
 
@@ -178,8 +192,8 @@ export function VisitorsChart() {
             <path
               d={linePath}
               fill="none"
-              stroke="#10B981"
-              strokeWidth="3"
+              stroke="#00875A"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -211,7 +225,7 @@ export function VisitorsChart() {
                       y1={paddingTop}
                       x2={pt.x}
                       y2={height - paddingBottom}
-                      stroke="#10B981"
+                      stroke="#00875A"
                       strokeWidth="1.5"
                       strokeDasharray="3 3"
                       strokeOpacity="0.5"
@@ -224,7 +238,7 @@ export function VisitorsChart() {
                     cy={pt.y}
                     r={isHovered ? 6 : isCurrent ? 4.5 : 3.5}
                     className="transition-all duration-150"
-                    fill={isHovered ? "#10B981" : isCurrent ? "#059669" : "#10B981"}
+                    fill={isHovered ? "#00875A" : isCurrent ? "#00875A" : "#00875A"}
                     stroke="#FFFFFF"
                     strokeWidth={isHovered ? 2.5 : 2}
                   />

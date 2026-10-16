@@ -18,6 +18,7 @@ import { UserRole } from "@/src/types";
 import { useAppData } from "@/src/app-data-context";
 import { useLogs } from "@/src/logs-context";
 import { WeekDay } from "@/components/meetings-view";
+import { calculateExecutivePipelineMetrics } from "@/src/executive-algorithms";
 
 interface ChatMessage {
   id: string;
@@ -120,25 +121,31 @@ export function AIAssistantChatbot({ currentRole, onRoleChange, onSelectPage }: 
     meetingsByDay,
     candidateSpecs,
     followUpTemplate,
+    followUpDispatches,
+    endedMeetingsLedger,
     whiteLabelConfig,
     sourceCandidateSpec,
     sourceMeeting,
     restoreMeetingById,
     restoreLastMeeting,
-    restoreLastCandidateSpec
+    restoreLastCandidateSpec,
+    systemSnapshots,
+    activeSecurityIncident
   } = useAppData();
 
-  const { logs, addLog } = useLogs();
+  const { logs, criticalIncidents, addLog } = useLogs();
 
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const ceoFullName = whiteLabelConfig?.contactName || "Naim Ramos";
   const companyName = (whiteLabelConfig?.isCustomized && whiteLabelConfig?.companyName) ? whiteLabelConfig.companyName : "Avantty";
   const ceoFirstName = ceoFullName.trim().split(/\s+/)[0] || "Naim";
   const ceoEmail = (whiteLabelConfig as any)?.contactEmail || `${ceoFirstName.toLowerCase()}@${companyName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`;
+  const pipelineMetrics = calculateExecutivePipelineMetrics(candidateSpecs);
 
   // Draggable position state
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -271,7 +278,7 @@ Direct answers to your questions:
     return null;
   };
 
-  // Smart, direct, executive bot response generator in English
+  // Intelligent, contextual, bilingual executive assistant engine
   const generateBotResponse = (userQuery: string): {
     responseText: string;
     actionPayload?: ChatMessage["actionPayload"];
@@ -280,517 +287,349 @@ Direct answers to your questions:
     const qLower = userQuery.toLowerCase().trim();
 
     // Check language of incoming query
-    const isSpanish = /[áéíóúñ¿¡]|\b(hola|que|qué|quién|quien|como|cómo|tengo|tienes|cuáles|cuales|semana|lunes|martes|miercoles|miércoles|jueves|viernes|hoy|mañana|manana|reuniones|entrevistas|gracias|dime|candidatos|perfiles|plantilla|algoritmo|capacidad|ponderado|porque|por qué|empresa|bueno|buenisimo|sirve)\b/i.test(userQuery);
+    const isSpanish = /[áéíóúñ¿¡]|\b(hola|que|qué|quién|quien|como|cómo|tengo|tienes|cuáles|cuales|semana|lunes|martes|miercoles|miércoles|jueves|viernes|hoy|mañana|manana|reuniones|entrevistas|gracias|dime|candidatos|perfiles|mandatos|plantilla|algoritmo|capacidad|ponderado|porque|por qué|empresa|bueno|buenisimo|sirve|para|basta|espera|detente|seguridad|borrado|eliminacion|eliminación)\b/i.test(userQuery);
 
-    // 0. MONEY, REVENUE & PROFIT: "why do your help let me make more money?", "how does this make money?"
-    const isMoneyOrRevenueQuery =
-      qLower.includes("make more money") ||
-      qLower.includes("make money") ||
-      qLower.includes("more money") ||
-      qLower.includes("earn more") ||
-      qLower.includes("generate revenue") ||
-      qLower.includes("increase revenue") ||
-      qLower.includes("more profit") ||
-      qLower.includes("higher margin") ||
-      qLower.includes("bottom line") ||
-      qLower.includes("financial return") ||
-      qLower.includes("ganar dinero") ||
-      qLower.includes("mas dinero") ||
-      qLower.includes("más dinero") ||
-      qLower.includes("rentabilidad") ||
+    // 1. STOP / WAIT / PAUSE DIRECTIVES (Section 9 Requirement)
+    const isStopDirective = /^(stop|para|basta|detente|detener|silencio|cállate|quieto|halt|alto)\b/i.test(qLower);
+    if (isStopDirective) {
+      setIsPaused(true);
+      return {
+        responseText: isSpanish ? "Entendido. Me detengo." : "Understood. I'll stop."
+      };
+    }
+
+    const isWaitDirective = /^(wait|espera|un momento|hold on|dame un segundo|espérate|esperate|pausa)\b/i.test(qLower);
+    if (isWaitDirective) {
+      setIsPaused(true);
+      return {
+        responseText: isSpanish ? "Claro, tómate tu tiempo." : "Sure, take your time."
+      };
+    }
+
+    // If conversation was paused, clear pause state when user asks a new question
+    if (isPaused) {
+      setIsPaused(false);
+    }
+
+    // 2. CASUAL GREETINGS & HOW-ARE-YOU (Section 9 Requirement)
+    const isHowAreYou = /^(cómo estás|como estas|qué tal|que tal|how are you|how is it going|how are things|how do you do)\b/i.test(qLower);
+    if (isHowAreYou) {
+      return {
+        responseText: isSpanish ? "¡Todo bien! ¿Y tú?" : "All good! How are you?"
+      };
+    }
+
+    const isUserDoingWell = /^(bien|todo bien|muy bien|estoy bien|genial|i'm good|im good|good|doing well|great|fine)\b/i.test(qLower);
+    if (isUserDoingWell) {
+      return {
+        responseText: isSpanish
+          ? "¡Me alegro! Dime en qué puedo ayudarte hoy."
+          : "Glad to hear! How can I assist you today?"
+      };
+    }
+
+    const isSimpleGreeting = /^(hola|buenas|buenos días|buenos dias|buenas tardes|buenas noches|hello|hi|hey|howdy)\b/i.test(qLower);
+    if (isSimpleGreeting) {
+      return {
+        responseText: isSpanish
+          ? "¡Hola! ¿Qué tal? ¿En qué puedo ayudarte?"
+          : "Hello! How can I help you today?"
+      };
+    }
+
+    const isThankYou = /^(gracias|muchas gracias|mil gracias|thank you|thanks|thx)\b/i.test(qLower);
+    if (isThankYou) {
+      return {
+        responseText: isSpanish
+          ? "¡De nada! Aquí estoy si necesitas algo más."
+          : "You're welcome! Let me know if you need anything else."
+      };
+    }
+
+    // 3. ARCHITECTURE & AI MODEL TRANSPARENCY (Section 9 Requirement)
+    const isModelOrArchitectureQuery =
+      qLower.includes("que modelo") ||
+      qLower.includes("qué modelo") ||
+      qLower.includes("que ia eres") ||
+      qLower.includes("qué ia eres") ||
+      qLower.includes("what model") ||
+      qLower.includes("which model") ||
+      qLower.includes("are you an llm") ||
+      qLower.includes("eres un llm") ||
+      qLower.includes("como funcionas") ||
+      qLower.includes("cómo funcionas") ||
+      qLower.includes("how do you work") ||
+      qLower.includes("gemini");
+
+    if (isModelOrArchitectureQuery) {
+      return {
+        responseText: isSpanish
+          ? `Actualmente opero a través del **motor conversacional contextual integrado de Avantty**, conectado en tiempo real a los mandatos, entrevistas, logs de auditoría y algoritmos de la plataforma.\n\nPara activar procesamiento generativo mediante modelos de frontera externos (como Google Gemini API), se puede configurar la variable de entorno \`GEMINI_API_KEY\` en el archivo \`.env\`.`
+          : `I currently operate via **Avantty's embedded contextual operations engine**, integrated directly with live search mandates, interview schedules, audit ledgers, and executive algorithms.\n\nTo enable external frontier generative reasoning (such as Google Gemini API), configure the \`GEMINI_API_KEY\` environment variable in your \`.env\` file.`
+      };
+    }
+
+    // 4. CEO SECURITY & MASS DELETION INVESTIGATION (Section 9 & 10 Requirement)
+    const isSecurityIncidentQuery =
+      qLower.includes("seguridad") ||
+      qLower.includes("security") ||
+      qLower.includes("incidente") ||
+      qLower.includes("incident") ||
+      qLower.includes("eliminacion masiva") ||
+      qLower.includes("eliminación masiva") ||
+      qLower.includes("mass deletion") ||
+      qLower.includes("borrado masivo") ||
+      qLower.includes("snapshot") ||
+      qLower.includes("restaurar sistema") ||
+      qLower.includes("restore system");
+
+    if (isSecurityIncidentQuery) {
+      if (currentRole !== "CEO") {
+        return {
+          responseText: isSpanish
+            ? "El acceso al registro de incidentes de seguridad críticos y controles de recuperación está restringido exclusivamente al rol de CEO."
+            : "Access to critical security incident logs and system recovery controls is strictly restricted to the CEO role."
+        };
+      }
+
+      const activeIncident = activeSecurityIncident || (criticalIncidents && criticalIncidents[0]);
+      if (activeIncident || (systemSnapshots && systemSnapshots.length > 0)) {
+        const snap = systemSnapshots[0];
+        const affectedSummary = activeIncident
+          ? `${activeIncident.affectedCount} registros afectados (${activeIncident.resourceType}). Identificado a las ${activeIncident.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`
+          : snap
+          ? `Último Snapshot guardado con ${snap.candidateSpecs.length} mandatos y ${Object.values(snap.meetingsByDay).flat().length} reuniones.`
+          : "Incidente detectado en el registro de auditoría.";
+
+        return {
+          responseText: isSpanish
+            ? `⚠️ **Investigación de Seguridad (Exclusivo CEO)**:\n\n• **Estado**: Se ha registrado un incidente crítico de eliminación o alteración.\n• **Detalle**: ${affectedSummary}\n\n🛡️ **Aviso de Gobernanza**: Como asistente de IA, **no tengo autorización para ejecutar la restauración de datos directamente**. Para restablecer el sistema de forma segura, por favor accede a la sección de **Seguridad y Recuperación** dentro del módulo de Logs y confirma la restauración manualmente.`
+            : `⚠️ **Security Investigation (CEO Confidential)**:\n\n• **Status**: A critical deletion or data mutation incident has been recorded.\n• **Detail**: ${affectedSummary}\n\n🛡️ **Governance Notice**: As an AI assistant, **I am not authorized to execute data restorations directly**. To safely restore the system, please navigate to the **Security & Recovery** panel in the Logs module and manually confirm the snapshot restoration.`,
+          navigationTarget: {
+            page: "logs",
+            label: isSpanish ? "Ir a Seguridad y Recuperación (Logs)" : "Go to Security & Recovery (Logs)"
+          }
+        };
+      } else {
+        return {
+          responseText: isSpanish
+            ? "No se registran incidentes de seguridad críticos ni eliminaciones masivas recientes. El sistema opera con normalidad y los datos están íntegros."
+            : "No critical security incidents or recent mass deletions are recorded. The system is operating normally and data integrity is intact."
+        };
+      }
+    }
+
+    // 5. LIVE METRICS & PIPELINE QUERIES (Real Platform Data, No Hallucinations)
+    const isMetricsQuery =
+      qLower.includes("metric") ||
+      qLower.includes("métrica") ||
+      qLower.includes("pipeline") ||
+      qLower.includes("revenue") ||
+      qLower.includes("ingresos") ||
       qLower.includes("facturacion") ||
       qLower.includes("facturación") ||
-      qLower.includes("ingresos");
+      qLower.includes("honorarios") ||
+      qLower.includes("capacity") ||
+      qLower.includes("capacidad") ||
+      qLower.includes("urgency") ||
+      qLower.includes("urgencia");
 
-    if (isMoneyOrRevenueQuery) {
-      if (isSpanish) {
-        return {
-          responseText: `Hola **${ceoFirstName}**, así es exactamente cómo este dashboard genera más dinero y rentabilidad directa para **${companyName}**:\n\n💰 **1. Triplica el Volumen de Cierres (+$180k–$300k/trimestre)**:\nAl reducir los mandatos de 65 días a solo **18–21 días**, cada socio puede cerrar el triple de procesos en el mismo tiempo sin contratar más personal.\n\n🛡️ **2. Cero Fugas de Honorarios (Protección de Retainers)**:\nEl Índice de Urgencia detecta fricciones a tiempo, evitando que los candidatos se caigan y protegiendo tus **honorarios de $35,000 a $85,000 por colocación**.\n\n⚡ **3. 300% Más Capacidad por Socio**:\nLa automatización de notas y correos en 10 minutos ahorra más de 15 horas semanales por consultor, permitiendo a 2 socios gestionar **7 mandatos activos ($250k+ en pipeline)**.\n\n*¿Te gustaría inspeccionar el desglose de nuestro pipeline de $173k o revisar los perfiles de candidatos listos para Consejo?*`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "🚀 Ver Desglose de Pipeline y Candidatos"
-          }
-        };
-      } else {
-        return {
-          responseText: `Hello **${ceoFirstName}**, here is exactly how this dashboard directly generates more revenue and profit for **${companyName}**:\n\n💰 **1. 3x Retainer Throughput (+$180k–$300k/quarter)**:\nBy compressing executive search cycles from 65 days down to **18–21 days**, each partner completes 3 retained searches in the time it normally takes to do 1 without extra overhead.\n\n🛡️ **2. Zero Fee Slippage & Retainer Protection**:\nThe live Urgency Index detects candidate stall early, preventing attrition and safeguarding your **$35,000–$85,000 placement fees**.\n\n⚡ **3. 300% Partner Capacity Expansion**:\nAutomated debriefs and 10-minute follow-ups save 15+ hours/week per consultant, allowing 2 partners to effortlessly manage **7 active retainers ($250k+ pipeline)**.\n\n*Would you like to inspect our live $173k pipeline breakdown or review active candidate Board scores?*`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "🚀 Inspect Live Pipeline Breakdown"
-          }
-        };
-      }
-    }
+    if (isMetricsQuery) {
+      const pipelineMetrics = calculateExecutivePipelineMetrics(candidateSpecs);
 
-    // 1. VALUE PROPOSITION & PITCH: "Why would this dashboard help my company?", "Why will this launch our company?"
-    const isValuePropOrPitchQuery =
-      qLower.includes("why would this dashboard help") ||
-      qLower.includes("why would this help") ||
-      qLower.includes("how will this dashboard help") ||
-      qLower.includes("how does this help") ||
-      qLower.includes("why this will launch") ||
-      qLower.includes("launch our company") ||
-      qLower.includes("launch my company") ||
-      qLower.includes("why will this") ||
-      qLower.includes("why this dashboard") ||
-      qLower.includes("good for my company") ||
-      qLower.includes("good for our company") ||
-      qLower.includes("why should we use") ||
-      qLower.includes("why should we choose") ||
-      qLower.includes("why choose") ||
-      qLower.includes("why use") ||
-      qLower.includes("what is the roi") ||
-      qLower.includes("roi") ||
-      qLower.includes("por que este dashboard") ||
-      qLower.includes("porque este dashboard") ||
-      qLower.includes("buenisimo para mi empresa") ||
-      qLower.includes("bueno para mi empresa") ||
-      qLower.includes("como ayuda a mi empresa") ||
-      qLower.includes("para que sirve") ||
-      qLower.includes("how will this help") ||
-      qLower.includes("value proposition") ||
-      qLower.includes("benefit") ||
-      qLower.includes("benefits") ||
-      qLower.includes("advantage");
-
-    if (isValuePropOrPitchQuery) {
-      if (isSpanish) {
-        return {
-          responseText: `Hola **${ceoFirstName}**, aquí tienes exactamente por qué este dashboard impulsará y escalará a **${companyName}** de forma exponencial:\n\n1. ⚡ **Velocidad de Cierre 3x Superior**: Reduce el ciclo tradicional de 65 días a solo **18–21 días** mediante Board Readiness Scores (0–100) y filtros Booleanos precalibrados.\n2. 📊 **Gobernanza y Transparencia Total**: Tu equipo y clientes tienen visibilidad en tiempo real del pipeline ponderado, rondas con el Consejo y cobro de honorarios por hitos sin perder tiempo en reuniones manuales.\n3. 🤖 **Apalancamiento Operativo Autónomo**: Los bots de IA transcriben entrevistas y despachan correos de seguimiento personalizados en 10 minutos, permitiendo que cada socio gestione más de 3.5 mandatos activos con máxima excelencia.\n\n*¿Te gustaría adentrarte en nuestro pipeline de candidatos C-Suite o prefieres revisar la agenda de entrevistas en vivo?*`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "🚀 Explorar Pipeline de Candidatos C-Suite"
-          }
-        };
-      } else {
-        return {
-          responseText: `Hello **${ceoFirstName}**, here is exactly how this dashboard will launch and scale **${companyName}**:\n\n1. ⚡ **3x Placement Velocity**: Compresses standard 65-day retained search cycles down to **18–21 days** using pre-calibrated Board Readiness Scores (0–100) and instant shortlist matching.\n2. 📊 **Institutional Governance & Transparency**: Replaces manual status reports with live executive visibility into pipeline valuation, active retainer loads, and risk telemetry.\n3. 🤖 **Autonomous AI Leverage**: Meeting bots capture interview intelligence and dispatch automated follow-ups in 10 minutes, allowing each partner to scale capacity to 3.5+ active mandates with zero delivery friction.\n\n*Would you like to dive into our live C-Suite talent pipeline or explore the active interview schedule?*`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "🚀 Explore Live C-Suite Pipeline"
-          }
-        };
-      }
-    }
-
-    // 2. CEO & Leadership Query
-    const isCEOQuery =
-      qLower.includes("ceo") ||
-      qLower.includes("chief executive") ||
-      qLower.includes("quien es el jefe") ||
-      qLower.includes("quién es el ceo") ||
-      qLower.includes("quien es el ceo") ||
-      qLower.includes("nombre del ceo") ||
-      qLower.includes("ceo name") ||
-      qLower.includes("who is the ceo") ||
-      qLower.includes("who is ceo") ||
-      qLower.includes("founder") ||
-      qLower.includes("fundador") ||
-      qLower.includes("director general");
-
-    if (isCEOQuery) {
-      if (isSpanish) {
-        return {
-          responseText: `Hola **${ceoFirstName}**, el **CEO de ${companyName}** es **${ceoFullName}** (${ceoEmail}). Lidera las operaciones de búsqueda de ejecutivos, asignación de socios y gobernanza de la firma.`
-        };
-      } else {
-        return {
-          responseText: `Hello **${ceoFirstName}**, the **CEO of ${companyName}** is **${ceoFullName}** (${ceoEmail}). Leading all executive search practice operations, partner allocations, and firm governance.`
-        };
-      }
-    }
-
-    // 3. Executive Algorithms: Weighted Pipeline Value
-    if (
-      qLower.includes("weighted pipeline") ||
-      qLower.includes("pipeline value") ||
-      qLower.includes("valor de pipeline") ||
-      qLower.includes("pipeline ponderado") ||
-      qLower.includes("como se calcula el pipeline") ||
-      qLower.includes("how is pipeline calculated") ||
-      (qLower.includes("pipeline") && (qLower.includes("calcul") || qLower.includes("formula") || qLower.includes("how")))
-    ) {
-      if (isSpanish) {
-        return {
-          responseText: `**Cálculo del Pipeline Ponderado en ${companyName}:**\n\n$$\\text{Pipeline Value} = (\\text{Salario Target} \\times 30\\% \\text{ Fee}) \\times \\text{Probabilidad}$$\n\n• **Open Mandate (Sourcing)**: **20%**\n• **Shortlist al Cliente**: **50%**\n• **Entrevistas de Consejo (Board)**: **80%**\n• **Offer Closed / Placed**: **100% Facturado** (Pasa a cobrado y libera el retainer activo).`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Ver Pipeline en Search Candidates"
-          }
-        };
-      } else {
-        return {
-          responseText: `**${companyName} Weighted Pipeline Calculation:**\n\n$$\\text{Pipeline Value} = (\\text{Target Salary} \\times 30\\% \\text{ Fee}) \\times \\text{Stage Probability}$$\n\n• **Open Mandate (Sourcing)**: **20%**\n• **Shortlist Presented**: **50%**\n• **Board Interviews**: **80%**\n• **Offer Closed / Placed**: **100% Placed Revenue** (Transfers to collected billings and releases partner retainer).`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "View Pipeline in Search Candidates"
-          }
-        };
-      }
-    }
-
-    // 4. Executive Algorithms: Capacity Load & Partners
-    if (
-      qLower.includes("capacity load") ||
-      qLower.includes("carga de capacidad") ||
-      qLower.includes("active retainer") ||
-      qLower.includes("capacidad de socios") ||
-      qLower.includes("partner capacity") ||
-      (qLower.includes("capacity") && (qLower.includes("calcul") || qLower.includes("formula") || qLower.includes("how") || qLower.includes("work")))
-    ) {
-      return {
-        responseText: `**${companyName} Partner Capacity Load:**\n\n$$\\text{Capacity Load \\%} = \\left(\\frac{\\text{Active Retainers}}{\\text{Partners} \\times 3.5}\\right) \\times 100$$\n\n• **Benchmark**: **3.5 active retainers per partner** (7 retainers max for 2 partners).\n• **Delay Warning**: Triggers automatically at **85%** capacity to protect SLA delivery speed.`,
-        navigationTarget: {
-          page: "dashboard",
-          label: "View Capacity Load on Dashboard"
+      if (qLower.includes("formula") || qLower.includes("fórmula") || qLower.includes("como se calcula") || qLower.includes("how is it calculated")) {
+        if (qLower.includes("capacity") || qLower.includes("capacidad")) {
+          return {
+            responseText: isSpanish
+              ? `**Fórmula de Carga de Capacidad de Socios (${companyName}):**\n\n$$\\text{Carga de Capacidad \\%} = \\left(\\frac{\\text{Mandatos Activos}}{\\text{Socios} \\times 3.5}\\right) \\times 100$$\n\n• Retainers Activos: **${pipelineMetrics.activeRetainersCount}**\n• Capacidad Máxima (2 socios): **7 mandatos**\n• Carga Actual: **${pipelineMetrics.capacityLoadPercentage}%** (${pipelineMetrics.capacityBadgeText}).`
+              : `**Partner Capacity Load Formula (${companyName}):**\n\n$$\\text{Capacity Load \\%} = \\left(\\frac{\\text{Active Retainers}}{\\text{Partners} \\times 3.5}\\right) \\times 100$$\n\n• Active Retainers: **${pipelineMetrics.activeRetainersCount}**\n• Maximum Capacity (2 partners): **7 retainers**\n• Current Load: **${pipelineMetrics.capacityLoadPercentage}%** (${pipelineMetrics.capacityBadgeText}).`
+          };
+        } else if (qLower.includes("urgency") || qLower.includes("urgencia")) {
+          return {
+            responseText: isSpanish
+              ? `**Fórmula del Índice de Urgencia del Mandato:**\n\n$$\\text{Urgency Score} = (\\text{Días Abierto} \\times 1.2) - (\\text{Candidatos Cualificados en Pipeline} \\times 15)$$\n\n• $\\ge 18$: 🔴 **Delay Risk** (Riesgo de retraso en entrega)\n• $5 - 17$: 🟡 **Attention Required** (Atención requerida)\n• $< 5$: 🟢 **On Track** (En curso dentro del SLA).`
+              : `**Search Mandate Urgency Index Formula:**\n\n$$\\text{Urgency Score} = (\\text{Days Open} \\times 1.2) - (\\text{Qualified Candidates} \\times 15)$$\n\n• $\\ge 18$: 🔴 **Delay Risk** (Delivery slippage risk)\n• $5 - 17$: 🟡 **Attention Required**\n• $< 5$: 🟢 **On Track** (Within SLA).`
+          };
+        } else {
+          return {
+            responseText: isSpanish
+              ? `**Fórmula del Pipeline Ponderado (${companyName}):**\n\n$$\\text{Weighted Pipeline} = \\sum (\\text{Salario Target} \\times 30\\% \\text{ Fee}) \\times \\text{Probabilidad de Fase}$$\n\n• Longlist / Sourcing: **20%**\n• Shortlist al Cliente: **50%**\n• Entrevistas de Consejo (Board): **80%**\n• Placed / Cerrado: **100%** (Pasa a Facturación Cobrada).`
+              : `**Weighted Pipeline Formula (${companyName}):**\n\n$$\\text{Weighted Pipeline} = \\sum (\\text{Target Salary} \\times 30\\% \\text{ Fee}) \\times \\text{Stage Probability}$$\n\n• Longlist / Sourcing: **20%**\n• Shortlist to Client: **50%**\n• Board Interviews: **80%**\n• Placed / Closed: **100%** (Transfers to Placed Revenue).`
+          };
         }
+      }
+
+      return {
+        responseText: isSpanish
+          ? `**Métricas Reales de la Plataforma (${companyName}):**\n\n• **Mandatos Activos**: ${pipelineMetrics.activeRetainersCount}\n• **Mandatos Cubiertos (Placed)**: ${pipelineMetrics.placedCount}\n• **Pipeline Ponderado**: **${pipelineMetrics.formattedWeightedPipeline}**\n• **Facturación Cobrada (Placed Revenue)**: **${pipelineMetrics.formattedPlacedRevenue}**\n• **Carga del Equipo**: **${pipelineMetrics.capacityLoadPercentage}%** (${pipelineMetrics.capacityBadgeText})`
+          : `**Live Platform Metrics (${companyName}):**\n\n• **Active Retainers**: ${pipelineMetrics.activeRetainersCount}\n• **Placed Mandates**: ${pipelineMetrics.placedCount}\n• **Weighted Pipeline**: **${pipelineMetrics.formattedWeightedPipeline}**\n• **Placed Revenue**: **${pipelineMetrics.formattedPlacedRevenue}**\n• **Team Capacity Load**: **${pipelineMetrics.capacityLoadPercentage}%** (${pipelineMetrics.capacityBadgeText})`
       };
     }
 
-    // 5. Executive Algorithms: Urgency Index
-    if (
-      qLower.includes("urgency index") ||
-      qLower.includes("indice de urgencia") ||
-      qLower.includes("índice de urgencia") ||
-      qLower.includes("urgency score") ||
-      qLower.includes("how is urgency calculated") ||
-      (qLower.includes("urgency") && qLower.includes("calcul"))
-    ) {
+    // 6. CANDIDATES & MANDATES QUERIES
+    const isCandidatesQuery =
+      qLower.includes("candidat") ||
+      qLower.includes("mandat") ||
+      qLower.includes("perfil") ||
+      qLower.includes("spec");
+
+    if (isCandidatesQuery) {
+      const activeSpecs = candidateSpecs.filter((s) => s.status !== "Placed");
+      const placedSpecs = candidateSpecs.filter((s) => s.status === "Placed");
+
+      if (qLower.includes("placed") || qLower.includes("cerrad") || qLower.includes("cubiert")) {
+        return {
+          responseText: isSpanish
+            ? `Actualmente hay **${placedSpecs.length} mandato(s) cubierto(s) (Placed)** en el historial de ${companyName}.\n${placedSpecs.map((s) => `• **${s.roleTitle}** en **${s.company}**`).join("\n")}`
+            : `There are currently **${placedSpecs.length} placed mandate(s)** in ${companyName}'s records.\n${placedSpecs.map((s) => `• **${s.roleTitle}** at **${s.company}**`).join("\n")}`
+        };
+      }
+
       return {
-        responseText: `**Mandate Urgency Index Formula:**\n\n$$\\text{Urgency Score} = (\\text{Days Open} \\times 1.2) - (\\text{Qualified Candidates} \\times 15)$$\n\n• $\\ge 18$: 🔴 **Delay Risk** (Requires immediate sourcing acceleration)\n• $5 - 17$: 🟡 **Attention Required**\n• $< 5$: 🟢 **Low Risk / On Track**`,
+        responseText: isSpanish
+          ? `Hay **${activeSpecs.length} mandatos de búsqueda activos** en ${companyName}:\n\n${activeSpecs.map((s) => `• **${s.code}**: **${s.roleTitle}** en **${s.company}** (${s.priority || "High"} Priority)`).join("\n")}`
+          : `There are **${activeSpecs.length} active search mandates** at ${companyName}:\n\n${activeSpecs.map((s) => `• **${s.code}**: **${s.roleTitle}** at **${s.company}** (${s.priority || "High"} Priority)`).join("\n")}`,
         navigationTarget: {
           page: "search-candidates",
-          label: "Inspect Urgency Scores"
+          label: isSpanish ? "Ver Mandatos Ejecutivos" : "View Executive Mandates"
         }
       };
     }
 
-    // 6. Self-Presentation / Functions & Capabilities Query (Only triggered for exact help/menu queries)
-    const isHelpOrCapabilitiesQuery =
-      qLower === "help" ||
-      qLower.startsWith("help ") ||
-      qLower === "ayuda" ||
-      qLower.startsWith("ayuda ") ||
-      qLower.includes("what can you do") ||
-      qLower.includes("who are you") ||
-      qLower.includes("que puedes hacer") ||
-      qLower.includes("qué puedes hacer") ||
-      qLower.includes("cuales son tus funciones") ||
-      qLower.includes("cuáles son tus funciones") ||
-      qLower.includes("quien eres") ||
-      qLower.includes("quién eres") ||
-      qLower.includes("capabilities") ||
-      qLower.includes("features");
-
-    if (isHelpOrCapabilitiesQuery) {
-      return {
-        responseText: `Hello **${ceoFirstName}**, I support **${companyName}** across 4 direct areas:\n\n1. **Metrics**: Live pipeline formulas, capacity load, and urgency indices.\n2. **Candidates**: C-Suite talent specs, Board scores, and hunting grounds.\n3. **Schedule**: Weekly interviews, bot recording status, and meeting archives.\n4. **Automation**: Instant candidate follow-up emails and audit logging.`
-      };
-    }
-
-    // 5. Priority Intent: Mark meeting as finished / ended from chat
-    const allActiveMeetings = (Object.entries(meetingsByDay) as [WeekDay, typeof meetingsByDay[WeekDay]][])
-      .flatMap(([day, list]) => (list || []).map((m) => ({ ...m, day })));
-
-    const matchedMeeting = allActiveMeetings.find((m) => {
-      const cName = m.candidate.toLowerCase();
-      const parts = cName.split(" ");
-      return qLower.includes(cName) || parts.some((p) => p.length > 2 && qLower.includes(p));
-    });
-
-    const isMarkFinishedMeetingIntent =
-      (qLower.includes("finish") ||
-        qLower.includes("ended") ||
-        qLower.includes("termin") ||
-        qLower.includes("finaliz") ||
-        qLower.includes("complet") ||
-        qLower.includes("conclui") ||
-        qLower.includes("done") ||
-        qLower.includes("acabo") ||
-        qLower.includes("acabó") ||
-        qLower.includes("mark") ||
-        qLower.includes("marcar")) &&
-      (matchedMeeting !== undefined ||
-        qLower.includes("meeting") ||
-        qLower.includes("reunion") ||
-        qLower.includes("reunión") ||
-        qLower.includes("entrevista") ||
-        qLower.includes("interview") ||
-        qLower.includes("session") ||
-        qLower.includes("sesion") ||
-        qLower.includes("sesión"));
-
-    if (isMarkFinishedMeetingIntent) {
-      const targetMeeting = matchedMeeting || allActiveMeetings[0];
-
-      if (targetMeeting) {
-        sourceMeeting(targetMeeting.id, currentRole, targetMeeting.day);
-
-        return {
-          responseText: `Meeting with **${targetMeeting.candidate}** (${targetMeeting.role} at **${targetMeeting.clientCompany}**) marked as **Meeting Ended** and archived in audit ledger.`,
-          navigationTarget: {
-            page: "meetings",
-            label: "View Meetings Schedule"
-          },
-          actionPayload: {
-            type: "restore_meeting",
-            label: `Revert: ${targetMeeting.candidate}`,
-            targetId: targetMeeting.id
-          }
-        };
-      }
-    }
-
-    // 6. Check if user asks "what candidates do I have this week?" or "candidates for this week"
-    const isWeekCandidateQuery =
-      (qLower.includes("candidat") || qLower.includes("perfil")) &&
-      (qLower.includes("week") || qLower.includes("semana") || qLower.includes("this week") || qLower.includes("esta semana") || qLower.includes("tengo") || qLower.includes("have"));
-
-    if (isWeekCandidateQuery) {
-      const allScheduledMeetings = (Object.entries(meetingsByDay) as [WeekDay, typeof meetingsByDay[WeekDay]][])
-        .flatMap(([day, list]) => (list || []).map((m) => ({ ...m, day })));
-
-      const topPrioritySpec = [...candidateSpecs].sort((a, b) => (b.urgencyRating ?? 8) - (a.urgencyRating ?? 8))[0];
-      const meetingsList = allScheduledMeetings
-        .map((m) => `• **${m.day} at ${m.time}** — **${m.candidate}** (${m.role} at **${m.clientCompany}**)`)
-        .join("\n");
-
-      return {
-        responseText: `**${allScheduledMeetings.length} interviews scheduled at ${companyName} this week:**\n\n${meetingsList}\n\n🔥 **Top Search Priority**: **${topPrioritySpec ? `${topPrioritySpec.roleTitle} for ${topPrioritySpec.company}` : "CEO for Veloce"}** (Urgency ${topPrioritySpec?.urgencyRating ?? 10}/10).`,
-        navigationTarget: {
-          page: "search-candidates",
-          label: "Go to Search Candidates"
-        }
-      };
-    }
-
-    // 7. Specific Weekday Meetings query
+    // 7. MEETINGS & INTERVIEWS QUERIES
     const requestedDay = detectWeekday(qLower);
     const isMeetingQuery =
       qLower.includes("meeting") ||
       qLower.includes("reunion") ||
       qLower.includes("reunión") ||
-      qLower.includes("reuniones") ||
       qLower.includes("entrevista") ||
-      qLower.includes("entrevistas") ||
-      qLower.includes("agenda") ||
       qLower.includes("schedule") ||
-      qLower.includes("sesion") ||
-      qLower.includes("sesiones") ||
-      qLower.includes("que tengo") ||
-      qLower.includes("qué tengo") ||
-      qLower.includes("what do i have");
+      qLower.includes("agenda");
 
-    if (requestedDay || (isMeetingQuery && (qLower.includes("day") || qLower.includes("dia") || qLower.includes("día")))) {
+    if (requestedDay || isMeetingQuery) {
       const targetDay: WeekDay = requestedDay || "Monday";
       const dayMeetings = meetingsByDay[targetDay] || [];
+      const totalAll = Object.values(meetingsByDay).flat().length;
 
       if (dayMeetings.length === 0) {
         return {
-          responseText: `**${targetDay}**: Schedule clear at **${companyName}**, 0 meetings scheduled.`,
-          navigationTarget: {
-            page: "meetings",
-            label: "View Schedule"
-          }
+          responseText: isSpanish
+            ? `Para el **${targetDay}** no hay reuniones agendadas (0 reuniones). En total hay **${totalAll} entrevistas** registradas en la semana.`
+            : `No meetings scheduled for **${targetDay}** (0 meetings). There are **${totalAll} total interviews** scheduled this week.`
         };
       }
 
-      const meetingsList = dayMeetings
-        .map((m) => `• **${m.time}** — **${m.candidate}** (${m.role} at **${m.clientCompany}**)`)
+      const listStr = dayMeetings
+        .map((m) => `• **${m.time}** — **${m.candidate}** (${m.role} en **${m.clientCompany}**)`)
         .join("\n");
 
       return {
-        responseText: `**${dayMeetings.length} meetings on ${targetDay} at ${companyName}:**\n\n${meetingsList}`,
+        responseText: isSpanish
+          ? `**${dayMeetings.length} reunión(es) agendada(s) para el ${targetDay} en ${companyName}:**\n\n${listStr}`
+          : `**${dayMeetings.length} meeting(s) scheduled for ${targetDay} at ${companyName}:**\n\n${listStr}`,
         navigationTarget: {
           page: "meetings",
-          label: `Open Schedule (${targetDay})`
+          label: isSpanish ? `Abrir Agenda (${targetDay})` : `Open Schedule (${targetDay})`
         }
       };
     }
 
-    // 8. Priority Candidates / Most Important Specs query
-    const isPriorityQuery =
-      qLower.includes("importan") ||
-      qLower.includes("urgent") ||
-      qLower.includes("priorita") ||
-      qLower.includes("priority") ||
-      qLower.includes("sourcing") ||
-      qLower.includes("candidat") ||
-      qLower.includes("spec") ||
-      qLower.includes("perfil");
-
-    if (isPriorityQuery) {
-      const activeSpecs = candidateSpecs.filter((s) => s.status !== "Finded");
-      const sortedSpecs = [...activeSpecs].sort((a, b) => (b.urgencyRating ?? 8) - (a.urgencyRating ?? 8));
-      const topSpec = sortedSpecs[0];
-      const nextSpecs = sortedSpecs.slice(1, 3);
-
-      if (topSpec) {
-        return {
-          responseText: `**Top Search Priorities at ${companyName}:**\n\n1. 🔴 **${topSpec.roleTitle} for ${topSpec.company}** (Urgency ${topSpec.urgencyRating ?? 10}/10: ${topSpec.coreChallenge.slice(0, 90)}...)\n${nextSpecs.map((s, i) => `${i + 2}. **${s.roleTitle}** at **${s.company}**`).join("\n")}`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Go to Search Candidates"
-          }
-        };
-      }
-    }
-
-    // 9. Follow-Ups & Email Template query
-    if (qLower.includes("follow up") || qLower.includes("follow-up") || qLower.includes("plantilla") || qLower.includes("correo") || qLower.includes("email") || qLower.includes("template")) {
+    // 8. FOLLOW-UP AUTOMATION (Instant, Managed by Avantty)
+    if (qLower.includes("follow up") || qLower.includes("follow-up") || qLower.includes("correo") || qLower.includes("email") || qLower.includes("plantilla")) {
       return {
-        responseText: `**${companyName} Follow-Up Automation:**\n\n• Subject: *${followUpTemplate.subject}*\n• Automatic dispatch: **10 minutes after** meeting completion.`,
-        navigationTarget: {
-          page: "follow-ups",
-          label: "Edit Follow-Up Template"
-        }
+        responseText: isSpanish
+          ? `**Automatización de Seguimiento de Avantty (Instant Post-Interview Follow-Up)**:\n\n• El envío se activa **de forma inmediata e instantánea** (<500ms) tras validar la finalización de la entrevista.\n• Agradece la participación e incluye el enlace para la siguiente fase si el proceso está autorizado.\n• La configuración interna y plantillas son gestionadas por el equipo de soporte de Avantty para garantizar la máxima gobernanza.`
+          : `**Avantty Follow-Up Automation (Instant Post-Interview Follow-Up)**:\n\n• Dispatches **instantly** (<500ms) once the interview conclusion event is validated.\n• Acknowledges candidate participation and provides next-round calendar links when authorized.\n• Internal templates and logic are managed by Avantty's support engineering team for institutional governance.`
       };
     }
 
-    // 10. Activity Logs query
-    if (qLower.includes("log") || qLower.includes("logs") || qLower.includes("audit") || qLower.includes("historial") || qLower.includes("eventos") || qLower.includes("registro")) {
-      const recent = logs.slice(0, 2);
+    // 9. AUDIT LOGS QUERY
+    if (qLower.includes("log") || qLower.includes("audit") || qLower.includes("historial") || qLower.includes("registro")) {
+      const recent = logs.slice(0, 3);
       return {
-        responseText: `**${companyName} Audit Stream (${logs.length} events):**\n\n${recent.map(l => `• **${l.action}** by ${l.userName} (${l.userRole})`).join("\n")}`,
+        responseText: isSpanish
+          ? `**Registro de Auditoría de ${companyName} (${logs.length} eventos registrados):**\n\n${recent.map((l) => `• **${l.action}** — ${l.userName} (${l.userRole})`).join("\n")}`
+          : `**Audit Stream for ${companyName} (${logs.length} recorded events):**\n\n${recent.map((l) => `• **${l.action}** — ${l.userName} (${l.userRole})`).join("\n")}`,
         navigationTarget: {
           page: "logs",
-          label: "View Activity Logs"
+          label: isSpanish ? "Ver Registro Completo de Logs" : "View Full Activity Logs"
         }
       };
     }
 
-    // 11. Clarification & Follow-up questions: "what?", "what do you mean?", "i don't understand", "cómo?", "no entiendo"
-    const isClarificationOrConfusionQuery =
-      qLower === "what" ||
-      qLower === "what?" ||
-      qLower === "what ? " ||
-      qLower.startsWith("what do you mean") ||
-      qLower.includes("i don't get it") ||
-      qLower.includes("i dont get it") ||
-      qLower.includes("i don't understand") ||
-      qLower.includes("explain simply") ||
-      qLower.includes("in plain english") ||
-      qLower.includes("huh") ||
-      qLower.includes("sorry?") ||
-      qLower.includes("can you clarify") ||
-      qLower.includes("tell me more") ||
-      qLower === "como" ||
-      qLower === "cómo" ||
-      qLower === "como?" ||
-      qLower === "cómo?" ||
-      qLower === "que?" ||
-      qLower === "qué?" ||
-      qLower.includes("no entiendo") ||
-      qLower.includes("a que te refieres") ||
-      qLower.includes("a qué te refieres") ||
-      qLower.includes("explica");
+    // 10. NATURAL DEFAULT (Polite, Non-Pushy, No Buttons)
+    return {
+      responseText: isSpanish
+        ? `No estoy seguro de haber comprendido tu consulta. Puedes preguntarme sobre los mandatos de búsqueda activos, la agenda de entrevistas, las fórmulas del pipeline o el estado de auditoría.`
+        : `I'm not sure I understood your question. You can ask me about active search mandates, interview agendas, pipeline metrics, or audit status.`
+    };
+  };
 
-    if (isClarificationOrConfusionQuery) {
-      if (isSpanish) {
-        return {
-          responseText: `En palabras sencillas, **${ceoFirstName}**:\n\nEl headhunting ejecutivo tradicional es lento, manual y lleno de horas perdidas en notas y hojas de cálculo.\n\nEste dashboard funciona como el centro de mando autónomo de **${companyName}**: puntúa candidatos con métricas del Consejo, transcribe entrevistas al instante y calcula tus cobros de honorarios en tiempo real sin trabajo manual.\n\n¿Tiene sentido? ¿O mejor nos lanzamos a ver el dashboard paso a paso para que veas en vivo cómo transforma las operaciones de tu empresa?`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "🚀 Ver el Dashboard Paso a Paso"
-          }
-        };
-      } else {
-        return {
-          responseText: `In plain words, **${ceoFirstName}**:\n\nTraditional executive search is slow, manual, and bogged down by lost time on spreadsheets and admin work.\n\nThis dashboard operates as **${companyName}**'s autonomous command center: it pre-scores C-Suite candidates with Board metrics, transcribes interviews with AI bots, and forecasts placement billings in real time with zero paperwork.\n\nMakes sense? Or would you rather dive into the dashboard step-by-step so you can see firsthand how it transforms your search operations?`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "🚀 Walk Me Through The Dashboard Step-by-Step"
-          }
-        };
+  const fetchGroqChatCompletion = async (
+    apiKey: string,
+    userMessage: string,
+    history: ChatMessage[]
+  ): Promise<string | null> => {
+    try {
+      const isSpanish = /[áéíóúñ¿¡]|\b(hola|mandato|reunión|pipeline|carga|socios|consejo|cerrar)\b/i.test(userMessage);
+      const systemPrompt = `You are the Avantty Executive Search Operating Assistant for ${companyName}.
+Your user is an executive ${currentRole}.
+You communicate naturally, concisely, and with high professional executive clarity.
+
+REAL PLATFORM DATA (Always cite these true figures, NEVER invent metrics, candidates or outcomes):
+- Active Retainers: ${pipelineMetrics.activeRetainersCount}
+- Weighted Pipeline Value: ${pipelineMetrics.formattedWeightedPipeline}
+- Placed Realized Revenue (100%): ${pipelineMetrics.formattedPlacedRevenue}
+- Partner Capacity Load: ${pipelineMetrics.capacityLoadPercentage}% (${pipelineMetrics.capacityBadgeText})
+
+BEHAVIORAL RULES:
+1. Language: Answer in the same language as the user (${isSpanish ? "Spanish" : "English"}).
+2. Casual greetings ("hola", "hello", "qué tal", "how are you"): Respond warmly and briefly (e.g. "¡Hola! ¿Qué tal? ¿En qué puedo ayudarte hoy?" or "Hello! Doing well, how can I help you today?"). NEVER launch into unsolicited feature tours, sales pitches, or lists of features upon a greeting.
+3. If the user tells you to stop or wait ("stop", "wait", "para", "basta"), be extremely brief ("Understood. I'll stop." or "Claro, tómate tu tiempo.").
+4. If asked about metrics or pipeline, cite the exact numbers from the real data above.
+5. Keep responses concise (1 to 3 paragraphs max).`;
+
+      const groqMessages = [
+        { role: "system", content: systemPrompt },
+        ...history.slice(-4).map((m) => ({
+          role: m.sender === "user" ? "user" : "assistant",
+          content: m.text
+        })),
+        { role: "user", content: userMessage }
+      ];
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-120b",
+          messages: groqMessages,
+          temperature: 0.5,
+          max_tokens: 450
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        return null;
       }
-    }
 
-    // 12. Affirmative responses / Tour request: "yes", "sure", "show me", "let's do it", "ok", "vamos", "adelante"
-    const isAffirmativeOrTourQuery =
-      qLower === "yes" ||
-      qLower === "yes please" ||
-      qLower === "sure" ||
-      qLower === "ok" ||
-      qLower === "okay" ||
-      qLower === "let's do it" ||
-      qLower === "lets do it" ||
-      qLower === "show me" ||
-      qLower.includes("walk me through") ||
-      qLower.includes("start tour") ||
-      qLower.includes("show me the dashboard") ||
-      qLower === "si" ||
-      qLower === "sí" ||
-      qLower === "vamos" ||
-      qLower === "dale" ||
-      qLower === "adelante" ||
-      qLower === "claro" ||
-      qLower.includes("enseñame") ||
-      qLower.includes("muestrame") ||
-      qLower.includes("guíame");
-
-    if (isAffirmativeOrTourQuery) {
-      if (isSpanish) {
-        return {
-          responseText: `¡Perfecto **${ceoFirstName}**! Vamos a recorrer las 3 áreas clave de **${companyName}**:\n\n1. 👥 **Búsqueda de Candidatos**: Perfiles C-Suite con puntuaciones de preparación para el Consejo (0-100).\n2. 📅 **Entrevistas y Agenda**: Grabación automática y correos de seguimiento en 10 minutos.\n3. 📊 **Métricas de Operaciones**: Pipeline ponderado ($173k) y capacidad activa por socio.\n\n¿Por cuál prefieres empezar?`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "1️⃣ Explorar Candidatos C-Suite"
-          }
-        };
-      } else {
-        return {
-          responseText: `Perfect, **${ceoFirstName}**! Let's explore the 3 core pillars of **${companyName}**:\n\n1. 👥 **Search Candidates**: Live C-Suite talent specs with Board Readiness scores (0-100).\n2. 📅 **Meetings & Schedule**: AI interview recording and automated 10-minute follow-ups.\n3. 📊 **Operations Command**: Weighted pipeline ($173k) and real-time partner capacity loads.\n\nWhere would you like to start?`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "1️⃣ Explore C-Suite Talent Pool"
-          }
-        };
-      }
-    }
-
-    // 13. Casual Greetings
-    const isGreeting = /^(hey|hello|hi|howdy|yo|sup|good morning|good afternoon|good evening|hola|buenas|buenos dias|qué tal|que tal)\b/i.test(qLower);
-    if (isGreeting) {
-      if (isSpanish) {
-        return {
-          responseText: `¡Hola **${ceoFirstName}**! Todo el sistema está operativo en **${companyName}**. ¿Quieres que te muestre los candidatos C-Suite activos o el desglose de ingresos del pipeline?`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Ver Candidatos C-Suite"
-          }
-        };
-      } else {
-        return {
-          responseText: `Hello **${ceoFirstName}**! Everything is fully operational at **${companyName}**. Would you like to inspect active C-Suite candidates or review live pipeline metrics?`,
-          navigationTarget: {
-            page: "search-candidates",
-            label: "Inspect C-Suite Candidates"
-          }
-        };
-      }
-    }
-
-    // 14. Intelligent Conversational Default
-    if (isSpanish) {
-      return {
-        responseText: `Hola **${ceoFirstName}**, como asistente de operaciones de **${companyName}**, puedo guiarte por el pipeline de candidatos, calcular honorarios de mandatos o revisar la agenda de entrevistas.\n\n*¿Prefieres que exploremos el dashboard paso a paso o tienes alguna duda concreta sobre las métricas?*`,
-        navigationTarget: {
-          page: "search-candidates",
-          label: "🚀 Explorar el Dashboard Paso a Paso"
-        }
-      };
-    } else {
-      return {
-        responseText: `Hello **${ceoFirstName}**, as **${companyName}**'s operations assistant, I can walk you through our C-Suite talent pipeline, calculate weighted retainer fees, or review the weekly interview schedule.\n\n*Would you like to explore the dashboard step-by-step, or do you have a specific question about your operations?*`,
-        navigationTarget: {
-          page: "search-candidates",
-          label: "🚀 Walk Me Through The Dashboard Step-by-Step"
-        }
-      };
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || null;
+    } catch {
+      return null;
     }
   };
 
-  const handleSendMessage = (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputMessage.trim()) return;
 
@@ -807,6 +646,60 @@ Direct answers to your questions:
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
 
+    const qLower = userText.toLowerCase().trim();
+    const isDirectControl = 
+      isPaused ||
+      /^(wait|espera|un momento|hold on|pause)\b/i.test(qLower) ||
+      /^(stop|para|detente|basta|silencio|calla|shh|quiet)\b/i.test(qLower) ||
+      qLower.includes("restaurar") ||
+      qLower.includes("eliminar") ||
+      qLower.includes("borrar") ||
+      qLower.includes("seguridad") ||
+      qLower.includes("security") ||
+      qLower.includes("que modelo") ||
+      qLower.includes("qué modelo") ||
+      qLower.includes("what model");
+
+    if (isDirectControl) {
+      setTimeout(() => {
+        const botRes = generateBotResponse(userText);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `bot-${Date.now()}`,
+            sender: "bot",
+            text: botRes.responseText,
+            timestamp: new Date(),
+            actionPayload: botRes.actionPayload,
+            navigationTarget: botRes.navigationTarget
+          }
+        ]);
+        setIsTyping(false);
+      }, 300);
+      return;
+    }
+
+    const groqKey = 
+      (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_GROQ_API_KEY) ||
+      (typeof window !== "undefined" ? localStorage.getItem("avantty_chat_api_key") : null);
+
+    if (groqKey) {
+      const groqResponse = await fetchGroqChatCompletion(groqKey, userText, messages);
+      if (groqResponse) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `bot-${Date.now()}`,
+            sender: "bot",
+            text: groqResponse,
+            timestamp: new Date()
+          }
+        ]);
+        setIsTyping(false);
+        return;
+      }
+    }
+
     setTimeout(() => {
       const botRes = generateBotResponse(userText);
       const botMsg: ChatMessage = {
@@ -819,7 +712,7 @@ Direct answers to your questions:
       };
       setMessages((prev) => [...prev, botMsg]);
       setIsTyping(false);
-    }, 400);
+    }, 350);
   };
 
   const handleConfirmAction = (msgId: string, action: ChatMessage["actionPayload"]) => {
