@@ -39,6 +39,18 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    --color-slate-950: var(--slate-950);
+    --color-slate-900: var(--slate-900);
+    --color-slate-850: var(--slate-850);
+    --color-slate-800: var(--slate-800);
+    --color-slate-700: var(--slate-700);
+    --color-slate-600: var(--slate-600);
+    --color-slate-500: var(--slate-500);
+    --color-slate-400: var(--slate-400);
+    --color-slate-300: var(--slate-300);
+    --color-slate-200: var(--slate-200);
+    --color-slate-100: var(--slate-100);
+    --color-slate-50: var(--slate-50);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -82,15 +94,28 @@
     --sidebar-accent-foreground: #080B0A;
     --sidebar-border: #E5E8E7;
     --sidebar-ring: #00875A;
+
+    --slate-950: #080B0A;
+    --slate-900: #080B0A;
+    --slate-850: #141B18;
+    --slate-800: #1A221E;
+    --slate-700: #2E3833;
+    --slate-600: #4B5752;
+    --slate-500: #5C6662;
+    --slate-400: #8B9993;
+    --slate-300: #CBD2CE;
+    --slate-200: #E5E8E7;
+    --slate-100: #F5F7F6;
+    --slate-50: #FAFBFA;
 }
 
-/* Dark Mode: Pure Deep Minimalist Enterprise (#080B0A, #FFFFFF, #00875A) */
+/* Dark Mode: Pure Monotonous Enterprise (#080B0A, #FFFFFF, #00875A) */
 .dark {
     --background: #080B0A;
     --foreground: #FFFFFF;
-    --card: #0D1210;
+    --card: #080B0A;
     --card-foreground: #FFFFFF;
-    --popover: #0D1210;
+    --popover: #080B0A;
     --popover-foreground: #FFFFFF;
     --primary: #00875A;
     --primary-foreground: #FFFFFF;
@@ -108,7 +133,7 @@
     --chart-2: #26A87C;
     --chart-3: #4DBF97;
     --chart-4: #006E49;
-    --chart-5: #0D1210;
+    --chart-5: #080B0A;
     --sidebar: #080B0A;
     --sidebar-foreground: #FFFFFF;
     --sidebar-primary: #00875A;
@@ -117,6 +142,19 @@
     --sidebar-accent-foreground: #FFFFFF;
     --sidebar-border: #1F2421;
     --sidebar-ring: #00875A;
+
+    --slate-950: #080B0A;
+    --slate-900: #080B0A;
+    --slate-850: #080B0A;
+    --slate-800: #141B18;
+    --slate-700: #1F2421;
+    --slate-600: #2E3833;
+    --slate-500: #5C6662;
+    --slate-400: #8B9993;
+    --slate-300: #CBD2CE;
+    --slate-200: #1F2421;
+    --slate-100: #141B18;
+    --slate-50: #080B0A;
 }
 
 .dark body {
@@ -125,37 +163,26 @@
 }
 
 /* Strict Monotonous Visual Governance (#080B0A, #FFFFFF, #00875A) */
-.dark .bg-slate-950,
-.dark .bg-slate-950\/90,
-.dark .bg-slate-950\/80,
-.dark .bg-slate-950\/70,
-.dark .bg-slate-950\/50,
-.dark .bg-slate-950\/40 {
+html.dark [class*="bg-slate-950"],
+html.dark [class*="bg-slate-900"],
+.dark [class*="bg-slate-950"],
+.dark [class*="bg-slate-900"],
+html.dark .bg-card,
+.dark .bg-card {
   background-color: #080B0A !important;
 }
 
-.dark .bg-slate-900,
-.dark .bg-slate-900\/95,
-.dark .bg-slate-900\/90,
-.dark .bg-slate-900\/80,
-.dark .bg-slate-900\/50 {
-  background-color: #0D1210 !important;
-}
-
-.dark .bg-slate-800,
-.dark .bg-slate-800\/90,
-.dark .bg-slate-800\/80,
-.dark .bg-slate-800\/70,
-.dark .bg-slate-800\/60,
-.dark .bg-slate-800\/40 {
+html.dark [class*="bg-slate-800"],
+.dark [class*="bg-slate-800"] {
   background-color: #141B18 !important;
 }
 
-.dark .border-slate-800,
-.dark .border-slate-800\/80,
-.dark .border-slate-800\/60,
-.dark .border-slate-700,
-.dark .border-slate-700\/80 {
+html.dark [class*="border-slate-800"],
+html.dark [class*="border-slate-700"],
+.dark [class*="border-slate-800"],
+.dark [class*="border-slate-700"],
+html.dark .border-card,
+.dark .border-card {
   border-color: #1F2421 !important;
 }
 
