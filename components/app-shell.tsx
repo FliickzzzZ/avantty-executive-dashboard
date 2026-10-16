@@ -32,7 +32,7 @@ export function AppShell({ children, activePage, currentRole, onSelectPage, onRo
 				onSelectPage={onSelectPage}
 				onOpenSettings={() => setIsSettingsOpen(true)}
 			/>
-			<SidebarInset className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen transition-colors flex flex-col">
+			<SidebarInset className="bg-background text-foreground min-h-screen transition-colors flex flex-col">
 				<AppHeader
 					activePage={activePage}
 					currentRole={currentRole}

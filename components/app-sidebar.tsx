@@ -73,7 +73,7 @@ export function AppSidebar({ activePage, currentRole, onSelectPage, onOpenSettin
 			collapsible="offcanvas"
 			variant="sidebar"
 		>
-			<SidebarHeader className="h-(--app-header-height,3.5rem) flex-row items-center justify-between border-b border-slate-200 dark:border-slate-800/60 px-4">
+			<SidebarHeader className="h-(--app-header-height,3.5rem) flex-row items-center justify-between border-b border-border px-4">
 				<Button
 					variant="ghost"
 					onClick={() => {
@@ -144,7 +144,7 @@ export function AppSidebar({ activePage, currentRole, onSelectPage, onOpenSettin
 				)}
 			</SidebarContent>
 
-			<SidebarFooter className="px-4 border-t border-slate-100 dark:border-slate-800 pt-2 pb-2">
+			<SidebarFooter className="px-4 border-t border-border pt-2 pb-2">
 				<div className="flex items-center justify-between">
 					<ThemeSwitcher />
 					{currentRole === "CEO" && (

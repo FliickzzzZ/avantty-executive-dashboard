@@ -640,7 +640,23 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // 5. Security Lockout & Enterprise Restoration State
   const [isSystemCritical, setIsSystemCritical] = useState<boolean>(false);
   const [deletionTimestamps, setDeletionTimestamps] = useState<number[]>([]);
-  const [systemSnapshots, setSystemSnapshots] = useState<SystemSnapshot[]>([]);
+  const [systemSnapshots, setSystemSnapshots] = useState<SystemSnapshot[]>(() => [
+    {
+      id: "snap-baseline-golden",
+      timestamp: new Date().toISOString(),
+      description: "Golden Master Baseline Snapshot (Full Mandates & Meeting Schedules)",
+      itemCount: {
+        meetings: Object.values(INITIAL_MEETINGS_BY_DAY).flat().length,
+        specs: INITIAL_CANDIDATE_SPECS.length,
+        dispatches: INITIAL_FOLLOWUP_DISPATCHES.length
+      },
+      data: {
+        meetingsByDay: JSON.parse(JSON.stringify(INITIAL_MEETINGS_BY_DAY)),
+        candidateSpecs: JSON.parse(JSON.stringify(INITIAL_CANDIDATE_SPECS)),
+        followUpDispatches: JSON.parse(JSON.stringify(INITIAL_FOLLOWUP_DISPATCHES))
+      }
+    }
+  ]);
   const [activeSecurityIncident, setActiveSecurityIncident] = useState<CriticalSecurityIncident | null>(null);
 
   // Instant Post-Interview Follow-Up Trigger (Dispatched upon Meeting Ended)
@@ -714,19 +730,25 @@ Our Senior Partners thoroughly enjoyed reviewing your track record in enterprise
 
     // If 3 or more deletions occur within 10 seconds, trigger Mass Deletion Alert
     if (updated.length >= 3) {
-      // Capture immutable snapshot prior to data loss
+      // Capture immutable snapshot prior to data loss, preserving all known specs
+      const fullPreservedSpecsMap = new Map<string, CandidateSearchSpec>();
+      INITIAL_CANDIDATE_SPECS.forEach((s) => fullPreservedSpecsMap.set(s.id, s));
+      deletedSpecsBuffer.forEach((s) => fullPreservedSpecsMap.set(s.id, s));
+      candidateSpecs.forEach((s) => fullPreservedSpecsMap.set(s.id, s));
+      const preservedSpecs = Array.from(fullPreservedSpecsMap.values());
+
       const snapshot: SystemSnapshot = {
         id: `snap-${Date.now()}`,
         timestamp: new Date().toISOString(),
         description: `Pre-Incident Snapshot before Mass Deletion by ${currentRole}`,
         itemCount: {
-          meetings: Object.values(meetingsByDay).flat().length,
-          specs: candidateSpecs.length,
+          meetings: Object.values(meetingsByDay).flat().length || Object.values(INITIAL_MEETINGS_BY_DAY).flat().length,
+          specs: preservedSpecs.length,
           dispatches: followUpDispatches.length
         },
         data: {
           meetingsByDay: JSON.parse(JSON.stringify(meetingsByDay)),
-          candidateSpecs: JSON.parse(JSON.stringify(candidateSpecs)),
+          candidateSpecs: JSON.parse(JSON.stringify(preservedSpecs)),
           followUpDispatches: JSON.parse(JSON.stringify(followUpDispatches))
         }
       };
@@ -790,14 +812,38 @@ Our Senior Partners thoroughly enjoyed reviewing your track record in enterprise
     }
 
     const targetSnapshot = snapshotId
-      ? systemSnapshots.find((s) => s.id === snapshotId)
+      ? (systemSnapshots.find((s) => s.id === snapshotId) || systemSnapshots[0])
       : systemSnapshots[0];
 
-    if (!targetSnapshot) return false;
+    // Combine any candidate specs from initial dataset, target snapshot, buffer, and state
+    const allSpecsMap = new Map<string, CandidateSearchSpec>();
+    INITIAL_CANDIDATE_SPECS.forEach((s) => allSpecsMap.set(s.id, { ...s, stage: "sourcing", status: "Searching" }));
+    if (targetSnapshot?.data?.candidateSpecs) {
+      targetSnapshot.data.candidateSpecs.forEach((s) => {
+        allSpecsMap.set(s.id, { ...s, stage: "sourcing", status: "Searching" });
+      });
+    }
+    deletedSpecsBuffer.forEach((s) => {
+      allSpecsMap.set(s.id, { ...s, stage: "sourcing", status: "Searching" });
+    });
+    candidateSpecs.forEach((s) => {
+      allSpecsMap.set(s.id, { ...s, stage: "sourcing", status: "Searching" });
+    });
+    const specsToRestore = Array.from(allSpecsMap.values());
 
-    setMeetingsByDay(targetSnapshot.data.meetingsByDay);
-    setCandidateSpecs(targetSnapshot.data.candidateSpecs);
-    setFollowUpDispatches(targetSnapshot.data.followUpDispatches);
+    const meetingsToRestore = (targetSnapshot?.data?.meetingsByDay && Object.values(targetSnapshot.data.meetingsByDay).flat().length > 0)
+      ? targetSnapshot.data.meetingsByDay
+      : INITIAL_MEETINGS_BY_DAY;
+
+    const dispatchesToRestore = targetSnapshot?.data?.followUpDispatches
+      ? targetSnapshot.data.followUpDispatches
+      : INITIAL_FOLLOWUP_DISPATCHES;
+
+    setMeetingsByDay(JSON.parse(JSON.stringify(meetingsToRestore)));
+    setCandidateSpecs(JSON.parse(JSON.stringify(specsToRestore)));
+    setFollowUpDispatches(JSON.parse(JSON.stringify(dispatchesToRestore)));
+    setEndedMeetingsLedger([]);
+    setDeletedSpecsBuffer([]);
     setIsSystemCritical(false);
     setDeletionTimestamps([]);
 
@@ -809,7 +855,7 @@ Our Senior Partners thoroughly enjoyed reviewing your track record in enterprise
     addLog({
       category: "Security & Audit",
       action: "CEO Authorized System Snapshot Rollback",
-      details: `Restored ${targetSnapshot.itemCount.specs} Mandates, ${targetSnapshot.itemCount.meetings} Scheduled Meetings from snapshot ${targetSnapshot.id}.`,
+      details: `Restored ${specsToRestore.length} Mandates, ${Object.values(meetingsToRestore).flat().length} Scheduled Meetings from snapshot.`,
       level: "success",
       userRole: "CEO"
     });
@@ -982,7 +1028,7 @@ Our Senior Partners thoroughly enjoyed reviewing your track record in enterprise
     setCandidateSpecs((prev) =>
       prev.map((s) =>
         s.id === specId
-          ? { ...s, stage: "placed", status: "Searching" as any }
+          ? { ...s, stage: "placed", status: "Placed" }
           : s
       )
     );
@@ -998,19 +1044,37 @@ Our Senior Partners thoroughly enjoyed reviewing your track record in enterprise
   };
 
   const restoreLastCandidateSpec = (): boolean => {
-    if (deletedSpecsBuffer.length === 0) return false;
-    const [lastSpec, ...remainingBuffer] = deletedSpecsBuffer;
-    setDeletedSpecsBuffer(remainingBuffer);
-    setCandidateSpecs((prev) => [lastSpec, ...prev]);
+    if (deletedSpecsBuffer.length > 0) {
+      const [lastSpec, ...remainingBuffer] = deletedSpecsBuffer;
+      setDeletedSpecsBuffer(remainingBuffer);
+      setCandidateSpecs((prev) => [lastSpec, ...prev]);
 
-    addLog({
-      category: "Search Mandates",
-      action: `Restored Mandate: ${lastSpec.code}`,
-      details: `Returned ${lastSpec.roleTitle} (${lastSpec.company}) to active search portfolio.`,
-      level: "success",
-    });
+      addLog({
+        category: "Search Mandates",
+        action: `Restored Mandate: ${lastSpec.code}`,
+        details: `Returned ${lastSpec.roleTitle} (${lastSpec.company}) to active search portfolio.`,
+        level: "success",
+      });
 
-    return true;
+      return true;
+    }
+
+    // Also check if any candidate spec was marked Placed, and revert it
+    const placedSpec = candidateSpecs.find((s) => s.stage === "placed" || s.status === "Placed");
+    if (placedSpec) {
+      setCandidateSpecs((prev) =>
+        prev.map((s) => (s.id === placedSpec.id ? { ...s, stage: "sourcing", status: "Searching" } : s))
+      );
+      addLog({
+        category: "Search Mandates",
+        action: `Reverted Placed Mandate: ${placedSpec.roleTitle}`,
+        details: `Returned ${placedSpec.roleTitle} at ${placedSpec.company} to active search portfolio.`,
+        level: "success",
+      });
+      return true;
+    }
+
+    return false;
   };
 
   const deleteCandidateSpecPermanently = (specId: string, currentRole: UserRole = "CEO") => {
@@ -1035,15 +1099,51 @@ Our Senior Partners thoroughly enjoyed reviewing your track record in enterprise
   };
 
   const revertAllCandidateSpecs = (currentRole: UserRole = "CEO") => {
-    if (deletedSpecsBuffer.length === 0) return;
-    const count = deletedSpecsBuffer.length;
-    setCandidateSpecs((prev) => [...deletedSpecsBuffer, ...prev]);
-    setDeletedSpecsBuffer([]);
+    let revertedCount = 0;
+
+    setCandidateSpecs((prev) => {
+      const existingIds = new Set(prev.map((s) => s.id));
+
+      // 1. Revert any placed mandates back to searching
+      const reverted = prev.map((s) => {
+        if (s.stage === "placed" || s.status === "Placed") {
+          revertedCount++;
+          return { ...s, stage: "sourcing" as const, status: "Searching" as const };
+        }
+        return s;
+      });
+
+      // 2. Bring back any specs from deletedSpecsBuffer
+      const fromBuffer: CandidateSearchSpec[] = [];
+      deletedSpecsBuffer.forEach((s) => {
+        if (!existingIds.has(s.id)) {
+          revertedCount++;
+          existingIds.add(s.id);
+          fromBuffer.push({ ...s, stage: "sourcing" as const, status: "Searching" as const });
+        }
+      });
+
+      // 3. Bring back any missing initial specs
+      const missingInitial: CandidateSearchSpec[] = [];
+      INITIAL_CANDIDATE_SPECS.forEach((s) => {
+        if (!existingIds.has(s.id)) {
+          revertedCount++;
+          existingIds.add(s.id);
+          missingInitial.push({ ...s, stage: "sourcing" as const, status: "Searching" as const });
+        }
+      });
+
+      return [...fromBuffer, ...missingInitial, ...reverted];
+    });
+
+    if (deletedSpecsBuffer.length > 0) {
+      setDeletedSpecsBuffer([]);
+    }
 
     addLog({
       category: "Search Mandates",
-      action: `Restored All Archived Mandates (${count})`,
-      details: `Batch restored ${count} search specifications back to active status.`,
+      action: `Restored All Search Mandates (${revertedCount})`,
+      details: `Reverted and restored search specifications back to active portfolio.`,
       level: "success",
       userRole: currentRole
     });

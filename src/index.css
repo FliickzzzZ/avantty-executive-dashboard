@@ -88,40 +88,75 @@
 .dark {
     --background: #080B0A;
     --foreground: #FFFFFF;
-    --card: #111614;
+    --card: #0D1210;
     --card-foreground: #FFFFFF;
-    --popover: #111614;
+    --popover: #0D1210;
     --popover-foreground: #FFFFFF;
     --primary: #00875A;
     --primary-foreground: #FFFFFF;
-    --secondary: #18201C;
+    --secondary: #141B18;
     --secondary-foreground: #FFFFFF;
-    --muted: #18201C;
+    --muted: #141B18;
     --muted-foreground: #8B9993;
     --accent: #0E241D;
     --accent-foreground: #34D399;
     --destructive: #EF4444;
-    --border: #222B27;
-    --input: #222B27;
+    --border: #1F2421;
+    --input: #1F2421;
     --ring: #00875A;
     --chart-1: #00875A;
     --chart-2: #26A87C;
     --chart-3: #4DBF97;
     --chart-4: #006E49;
-    --chart-5: #111614;
-    --sidebar: #0C110F;
+    --chart-5: #0D1210;
+    --sidebar: #080B0A;
     --sidebar-foreground: #FFFFFF;
     --sidebar-primary: #00875A;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #18201C;
+    --sidebar-accent: #141B18;
     --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #222B27;
+    --sidebar-border: #1F2421;
     --sidebar-ring: #00875A;
 }
 
 .dark body {
   background-color: #080B0A;
   color: #FFFFFF;
+}
+
+/* Strict Monotonous Visual Governance (#080B0A, #FFFFFF, #00875A) */
+.dark .bg-slate-950,
+.dark .bg-slate-950\/90,
+.dark .bg-slate-950\/80,
+.dark .bg-slate-950\/70,
+.dark .bg-slate-950\/50,
+.dark .bg-slate-950\/40 {
+  background-color: #080B0A !important;
+}
+
+.dark .bg-slate-900,
+.dark .bg-slate-900\/95,
+.dark .bg-slate-900\/90,
+.dark .bg-slate-900\/80,
+.dark .bg-slate-900\/50 {
+  background-color: #0D1210 !important;
+}
+
+.dark .bg-slate-800,
+.dark .bg-slate-800\/90,
+.dark .bg-slate-800\/80,
+.dark .bg-slate-800\/70,
+.dark .bg-slate-800\/60,
+.dark .bg-slate-800\/40 {
+  background-color: #141B18 !important;
+}
+
+.dark .border-slate-800,
+.dark .border-slate-800\/80,
+.dark .border-slate-800\/60,
+.dark .border-slate-700,
+.dark .border-slate-700\/80 {
+  border-color: #1F2421 !important;
 }
 
 @layer base {

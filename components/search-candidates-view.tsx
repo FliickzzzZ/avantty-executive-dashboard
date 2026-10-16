@@ -748,7 +748,13 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
 
   // Calculate active and logs counts
   const activeCount = useMemo(() => candidateSpecs.filter((s) => s.status !== "Placed").length, [candidateSpecs]);
-  const logsCount = useMemo(() => candidateSpecs.filter((s) => s.status === "Placed").length, [candidateSpecs]);
+  const logsCount = useMemo(() => candidateSpecs.filter((s) => s.status === "Placed" || s.stage === "placed").length, [candidateSpecs]);
+  const totalRevertibleCount = useMemo(() => {
+    const placedCount = candidateSpecs.filter((s) => s.status === "Placed" || s.stage === "placed").length;
+    const bufferCount = deletedSpecsBuffer.length;
+    const missingCount = Math.max(0, 4 - candidateSpecs.length);
+    return placedCount + bufferCount + missingCount;
+  }, [candidateSpecs, deletedSpecsBuffer]);
 
   // Sidebar list for modal with high-speed filter
   const sidebarList = useMemo(() => {
@@ -1217,20 +1223,23 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
-              {logsCount > 0 && (
+              {totalRevertibleCount > 0 && (
                 <button
                   type="button"
-                  onClick={() => revertAllCandidateSpecs(currentRole)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2.5 text-xs font-medium transition-all shadow-xs cursor-pointer"
+                  onClick={() => {
+                    revertAllCandidateSpecs(currentRole);
+                    setSelectedSpec(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2.5 text-xs font-medium transition-all shadow-xs cursor-pointer active:scale-95"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  <span>Revert All ({logsCount})</span>
+                  <span>Revert All ({totalRevertibleCount})</span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={restoreLastCandidateSpec}
-                disabled={deletedSpecsBuffer.length === 0 && logsCount === 0}
+                disabled={deletedSpecsBuffer.length === 0 && totalRevertibleCount === 0}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer"
               >
                 <RotateCcw className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -1630,7 +1639,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
 
                   {/* Sidebar Candidate List (Smooth, GPU-accelerated scrolling) */}
                   <div className="flex-1 overflow-y-auto overscroll-contain p-2 space-y-1.5 [scrollbar-width:thin] scroll-smooth">
-                    {ledgerTab === "logs" && logsCount > 0 && (
+                    {ledgerTab === "logs" && (totalRevertibleCount > 0 || logsCount > 0) && (
                       <div className="pb-1">
                         <button
                           type="button"
@@ -1641,7 +1650,7 @@ export function SearchCandidatesView({ currentRole = "CEO" }: SearchCandidatesVi
                           className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-98"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
-                          <span>Revert All Logs ({logsCount})</span>
+                          <span>Revert All Logs ({totalRevertibleCount || logsCount})</span>
                         </button>
                       </div>
                     )}

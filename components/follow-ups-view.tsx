@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/card";
 import {
   Mail,
@@ -15,7 +16,9 @@ import {
   AlertCircle,
   HelpCircle,
   Building2,
-  CalendarCheck
+  CalendarCheck,
+  X,
+  Info
 } from "lucide-react";
 import { useLogs } from "@/src/logs-context";
 import { useAppData, getCustomizedFollowUpTemplate } from "@/src/app-data-context";
@@ -42,6 +45,7 @@ export function FollowUpsView({ currentRole = "CEO" }: FollowUpsViewProps) {
 
   const [copied, setCopied] = useState(false);
   const [selectedDispatch, setSelectedDispatch] = useState<FollowUpDispatch | null>(null);
+  const [showDemoModal, setShowDemoModal] = useState<boolean>(true);
 
   const handleCopyTemplate = () => {
     navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
@@ -74,6 +78,14 @@ export function FollowUpsView({ currentRole = "CEO" }: FollowUpsViewProps) {
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setShowDemoModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#00875A]/30 bg-[#00875A]/10 px-3.5 py-2 text-xs font-semibold text-[#00875A] hover:bg-[#00875A]/20 transition-colors cursor-pointer shadow-xs"
+          >
+            <Info className="h-3.5 w-3.5" />
+            <span>Demo Notice</span>
+          </button>
           <button
             type="button"
             onClick={handleCopyTemplate}
@@ -284,8 +296,76 @@ export function FollowUpsView({ currentRole = "CEO" }: FollowUpsViewProps) {
             </div>
           </Card>
         </div>
-
       </div>
+
+      {/* Demo Notice Pop-Up Dialog */}
+      <AnimatePresence>
+        {showDemoModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg rounded-2xl bg-card p-6 shadow-2xl border border-border space-y-5 text-foreground"
+            >
+              <button
+                type="button"
+                onClick={() => setShowDemoModal(false)}
+                className="absolute right-4 top-4 rounded-xl p-1.5 text-muted-foreground hover:bg-secondary transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-border pb-4 pr-8">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00875A]/10 border border-[#00875A]/25 text-[#00875A]">
+                  <Zap className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-foreground">
+                      Follow-Ups Service Demo
+                    </h2>
+                    <span className="rounded bg-[#00875A]/10 text-[#00875A] border border-[#00875A]/25 px-2 py-0.5 text-[10px] font-semibold">
+                      Live Simulation
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Avantty Managed Post-Interview Follow-Up Service
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-xs leading-relaxed text-muted-foreground">
+                <p>
+                  You are viewing the <strong className="text-foreground">Follow-Ups module in Demonstration Mode</strong>. In Avantty's managed enterprise production service, follow-up messages are dispatched autonomously by our server infrastructure within <strong className="text-foreground">&lt; 500ms</strong> of an interview concluding.
+                </p>
+
+                <div className="rounded-xl border border-border bg-secondary/40 p-3.5 space-y-2 text-foreground">
+                  <div className="flex items-center gap-2 font-semibold text-xs">
+                    <Shield className="h-4 w-4 text-[#00875A]" />
+                    <span>Avantty Managed Architecture Highlights:</span>
+                  </div>
+                  <ul className="list-disc pl-5 space-y-1.5 text-muted-foreground text-[11px]">
+                    <li><strong className="text-foreground">Autonomous Execution:</strong> No manual email authoring needed. When an interview ends, our system formats and validates the briefing debrief.</li>
+                    <li><strong className="text-foreground">Confidential Next-Stage Links:</strong> For qualified candidates, encrypted scheduling tokens for board rounds are inserted automatically.</li>
+                    <li><strong className="text-foreground">Demo Safeguard:</strong> In this evaluation environment, outbound emails are captured and recorded in the telemetry ledger below to safeguard external candidate inboxes.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setShowDemoModal(false)}
+                  className="rounded-xl bg-[#00875A] hover:bg-[#00704A] px-4 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
+                >
+                  Understood & Continue
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
