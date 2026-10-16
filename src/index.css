@@ -60,18 +60,18 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Light Mode: Pure Minimalist Enterprise (#080B0A, #FFFFFF, #00875A) */
+/* Light Mode: Pure Minimalist Enterprise (#0A0E0D, #FFFFFF, #00875A) */
 :root {
     --background: #FFFFFF;
-    --foreground: #080B0A;
+    --foreground: #0A0E0D;
     --card: #FFFFFF;
-    --card-foreground: #080B0A;
+    --card-foreground: #0A0E0D;
     --popover: #FFFFFF;
-    --popover-foreground: #080B0A;
-    --primary: #00875A;
+    --popover-foreground: #0A0E0D;
+    --primary: #0A0E0D;
     --primary-foreground: #FFFFFF;
     --secondary: #F5F7F6;
-    --secondary-foreground: #080B0A;
+    --secondary-foreground: #0A0E0D;
     --muted: #F5F7F6;
     --muted-foreground: #5C6662;
     --accent: #E6F3EE;
@@ -84,19 +84,19 @@
     --chart-2: #006E49;
     --chart-3: #26A87C;
     --chart-4: #4DBF97;
-    --chart-5: #004D33;
+    --chart-5: #0A0E0D;
     --radius: 0.5rem;
     --sidebar: #FFFFFF;
-    --sidebar-foreground: #080B0A;
+    --sidebar-foreground: #0A0E0D;
     --sidebar-primary: #00875A;
     --sidebar-primary-foreground: #FFFFFF;
     --sidebar-accent: #F5F7F6;
-    --sidebar-accent-foreground: #080B0A;
+    --sidebar-accent-foreground: #0A0E0D;
     --sidebar-border: #E5E8E7;
     --sidebar-ring: #00875A;
 
-    --slate-950: #080B0A;
-    --slate-900: #080B0A;
+    --slate-950: #0A0E0D;
+    --slate-900: #0A0E0D;
     --slate-850: #141B18;
     --slate-800: #1A221E;
     --slate-700: #2E3833;
@@ -109,81 +109,58 @@
     --slate-50: #FAFBFA;
 }
 
-/* Dark Mode: Pure Monotonous Enterprise (#080B0A, #FFFFFF, #00875A) */
+/* Dark Mode: Comfortable Midnight Black ("Negro Medianoche / Cómodo de Ver") */
 .dark {
-    --background: #080B0A;
+    --background: #0A0E0D;
     --foreground: #FFFFFF;
-    --card: #080B0A;
+    --card: #121816;
     --card-foreground: #FFFFFF;
-    --popover: #080B0A;
+    --popover: #121816;
     --popover-foreground: #FFFFFF;
-    --primary: #00875A;
-    --primary-foreground: #FFFFFF;
-    --secondary: #141B18;
+    --primary: #FFFFFF;
+    --primary-foreground: #0A0E0D;
+    --secondary: #161E1B;
     --secondary-foreground: #FFFFFF;
-    --muted: #141B18;
+    --muted: #161E1B;
     --muted-foreground: #8B9993;
-    --accent: #0E241D;
-    --accent-foreground: #34D399;
+    --accent: #00875A;
+    --accent-foreground: #FFFFFF;
     --destructive: #EF4444;
-    --border: #1F2421;
-    --input: #1F2421;
+    --destructive-foreground: #FFFFFF;
+    --border: #1E2623;
+    --input: #1E2623;
     --ring: #00875A;
     --chart-1: #00875A;
     --chart-2: #26A87C;
     --chart-3: #4DBF97;
     --chart-4: #006E49;
-    --chart-5: #080B0A;
-    --sidebar: #080B0A;
+    --chart-5: #0A0E0D;
+    --sidebar: #0A0E0D;
     --sidebar-foreground: #FFFFFF;
-    --sidebar-primary: #00875A;
-    --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #141B18;
+    --sidebar-primary: #FFFFFF;
+    --sidebar-primary-foreground: #0A0E0D;
+    --sidebar-accent: #161E1B;
     --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #1F2421;
+    --sidebar-border: #1E2623;
     --sidebar-ring: #00875A;
 
-    --slate-950: #080B0A;
-    --slate-900: #080B0A;
-    --slate-850: #080B0A;
-    --slate-800: #141B18;
-    --slate-700: #1F2421;
+    --slate-950: #0A0E0D;
+    --slate-900: #121816;
+    --slate-850: #141C19;
+    --slate-800: #19221F;
+    --slate-700: #1E2623;
     --slate-600: #2E3833;
     --slate-500: #5C6662;
     --slate-400: #8B9993;
     --slate-300: #CBD2CE;
-    --slate-200: #1F2421;
-    --slate-100: #141B18;
-    --slate-50: #080B0A;
+    --slate-200: #1E2623;
+    --slate-100: #161E1B;
+    --slate-50: #0A0E0D;
 }
 
 .dark body {
-  background-color: #080B0A;
+  background-color: #0A0E0D;
   color: #FFFFFF;
-}
-
-/* Strict Monotonous Visual Governance (#080B0A, #FFFFFF, #00875A) */
-html.dark [class*="bg-slate-950"],
-html.dark [class*="bg-slate-900"],
-.dark [class*="bg-slate-950"],
-.dark [class*="bg-slate-900"],
-html.dark .bg-card,
-.dark .bg-card {
-  background-color: #080B0A !important;
-}
-
-html.dark [class*="bg-slate-800"],
-.dark [class*="bg-slate-800"] {
-  background-color: #141B18 !important;
-}
-
-html.dark [class*="border-slate-800"],
-html.dark [class*="border-slate-700"],
-.dark [class*="border-slate-800"],
-.dark [class*="border-slate-700"],
-html.dark .border-card,
-.dark .border-card {
-  border-color: #1F2421 !important;
 }
 
 @layer base {

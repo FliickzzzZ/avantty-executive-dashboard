@@ -26,8 +26,8 @@ export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void 
   return (
     <TooltipProvider delay={150}>
       <div className="flex flex-col gap-6">
-        {/* Personalized Client Executive Hero Banner (Deep Black / Pure White / Emerald #00875A Theme) */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-white via-slate-50/60 to-emerald-50/30 dark:from-[#080B0A] dark:via-neutral-900/90 dark:to-neutral-900 border border-slate-200/90 dark:border-neutral-800 p-6 text-slate-900 dark:text-slate-100 shadow-sm">
+        {/* Personalized Client Executive Hero Banner (Midnight Obsidian / Pure White / Emerald #00875A Theme) */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-white via-slate-50/60 to-emerald-50/30 dark:from-[#121816] dark:via-[#121816] dark:to-[#121816] border border-slate-200/90 dark:border-[#1E2623] p-6 text-slate-900 dark:text-slate-100 shadow-sm">
           <div className="absolute top-0 right-0 -mt-8 -mr-8 h-48 w-48 rounded-full bg-[#00875A]/10 blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
             {/* Left: Client & Partner Info */}
@@ -126,7 +126,7 @@ export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void 
             {/* Right: Real-Time Algorithm Intelligence Cards */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full lg:w-auto">
               {/* 1. Algoritmo de Valor de Pipeline Ponderado (Weighted Pipeline Value) */}
-              <div className="flex flex-col bg-white/95 dark:bg-neutral-900 px-4 py-3 rounded-xl border border-emerald-200/80 dark:border-[#00875A]/30 shadow-2xs space-y-1 min-w-[220px]">
+              <div className="flex flex-col bg-white/95 dark:bg-[#121816] px-4 py-3 rounded-xl border border-emerald-200/80 dark:border-[#00875A]/30 shadow-2xs space-y-1 min-w-[220px]">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
@@ -142,12 +142,12 @@ export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void 
                           <Info className="h-3 w-3" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs text-xs space-y-1.5 bg-[#080B0A] text-white p-3 rounded-xl border border-neutral-800 shadow-xl">
+                      <TooltipContent side="top" className="max-w-xs text-xs space-y-1.5 bg-[#121816] text-white p-3 rounded-xl border border-[#1E2623] shadow-xl">
                         <p className="font-semibold text-emerald-400">Weighted Pipeline Formula</p>
                         <p className="text-neutral-300 text-[11px] leading-relaxed">
                           Sum of <code className="text-emerald-300 font-mono text-[10px]">(Salary × 30% Fee) × Stage Probability</code> across active retainers:
                         </p>
-                        <div className="space-y-0.5 text-[11px] text-neutral-300 border-t border-neutral-800 pt-1 font-mono">
+                        <div className="space-y-0.5 text-[11px] text-neutral-300 border-t border-[#1E2623] pt-1 font-mono">
                           <div className="flex justify-between"><span>Phase 1 (Longlist):</span><span className="text-emerald-400">20%</span></div>
                           <div className="flex justify-between"><span>Phase 2 (Shortlist):</span><span className="text-emerald-400">50%</span></div>
                           <div className="flex justify-between"><span>Phase 3 (Board Round):</span><span className="text-emerald-400">80%</span></div>
@@ -167,7 +167,7 @@ export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void 
                     Pipeline
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-neutral-400 pt-1 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                <div className="text-[10px] text-slate-500 dark:text-neutral-400 pt-1 border-t border-slate-100 dark:border-[#1E2623] flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <span>Placed Revenue (100%):</span>
                     <Tooltip>
@@ -180,7 +180,7 @@ export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void 
                           <Info className="h-2.5 w-2.5" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs text-xs space-y-1 bg-[#080B0A] text-white p-2.5 rounded-xl border border-neutral-800 shadow-xl">
+                      <TooltipContent side="top" className="max-w-xs text-xs space-y-1 bg-[#121816] text-white p-2.5 rounded-xl border border-[#1E2623] shadow-xl">
                         <p className="font-semibold text-emerald-400">Placed Revenue (100%)</p>
                         <p className="text-neutral-300 text-[11px]">
                           Realized executive placement fee revenue (100% collected) strictly for closed & placed client mandates.
@@ -193,7 +193,7 @@ export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void 
               </div>
 
               {/* 2. Algoritmo de Carga de Capacidad (Active Retainer Capacity Load) */}
-              <div className="flex flex-col bg-white/95 dark:bg-neutral-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-2xs space-y-1.5 min-w-[210px]">
+              <div className="flex flex-col bg-white/95 dark:bg-[#121816] px-4 py-3 rounded-xl border border-slate-200 dark:border-[#1E2623] shadow-2xs space-y-1.5 min-w-[210px]">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
@@ -209,7 +209,7 @@ export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void 
                           <Info className="h-3 w-3" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs text-xs space-y-1.5 bg-[#080B0A] text-white p-3 rounded-xl border border-neutral-800 shadow-xl">
+                      <TooltipContent side="top" className="max-w-xs text-xs space-y-1.5 bg-[#121816] text-white p-3 rounded-xl border border-[#1E2623] shadow-xl">
                         <p className="font-semibold text-emerald-400">Capacity Load Formula</p>
                         <p className="text-neutral-300 text-[11px] leading-relaxed">
                           <code className="text-emerald-300 font-mono text-[10px]">(Active Retainers ÷ (Managing Partners × 3.5 Max)) × 100</code>.
@@ -232,7 +232,7 @@ export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void 
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-neutral-800 overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-[#0A0E0D] overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       metrics.isOverloaded

@@ -21,7 +21,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
   Recruiter: {
     id: "Recruiter",
     label: "Senior Consultant",
-    badgeBg: "bg-[#080B0A] text-white dark:bg-white dark:text-[#080B0A] border-transparent",
+    badgeBg: "bg-[#0A0E0D] text-white dark:bg-white dark:text-[#0A0E0D] border-transparent",
     badgeText: "Search Consultant Access",
     description: "Operational focus on Active Mandates, Scheduled Client Debriefs, and Candidate Evaluation.",
     allowedPages: ["meetings", "search-candidates", "follow-ups"]
